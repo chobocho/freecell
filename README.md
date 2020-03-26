@@ -1,2 +1,2 @@
-# freecll
+# Freecell
 Freecell game
