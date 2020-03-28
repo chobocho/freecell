@@ -23,6 +23,7 @@ public class CommandEngine {
         functionMap.put(PlayCommand.PAUSE, new PauseFunction());
         functionMap.put(PlayCommand.IDLE, new IdleFunction());
         functionMap.put(PlayCommand.WIN, new WinFunction());
+        functionMap.put(PlayCommand.BACK, new BackFunction());
     }
 
     public boolean runCommand (PlayCommand command) {

@@ -26,25 +26,30 @@ public class GameState {
         return false;
     }
 
-    public boolean moveCard(int from, int to) {
-        return false;
-    }
-
     public boolean moveCard(int from, int to, int count) {
         return false;
     }
 
-    public int getState() { return NONE_STATE; }
+    public int getState() {
+        return NONE_STATE;
+    }
 
     public boolean openCard(int deck) {
         return false;
     }
 
-    public void pushCard(Card[] cards) {
+    public boolean back() {
+        return false;
+    }
 
+    public void pushCard(Card[] cards) {
     }
 
     public boolean isFinishGame() {
         return false;
+    }
+
+    public int getMoveCount() {
+        return 0;
     }
 }

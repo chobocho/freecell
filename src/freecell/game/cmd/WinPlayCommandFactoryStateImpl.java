@@ -64,6 +64,9 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
                 case 73: // I
                     return new PlayCommand(PlayCommand.MOVE, Freecell.BOARD_DECK_8, y);
 
+                case 66: // B
+                    return new PlayCommand(PlayCommand.BACK, 0, 0);
+
                 case 27: // ESC
                 case 80: // P
                     return new PlayCommand(PlayCommand.PAUSE, 0, 0);

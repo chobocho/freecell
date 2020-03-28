@@ -46,7 +46,7 @@ public class CardGameGui extends JPanel implements GameObserver {
     final public static int PLAY_GAME_IMAGE = 1;
     final public static int RESME_GAME_IMAGE = 2;
 
-    String [] buttonImageName = {
+    String[] buttonImageName = {
             "/img/newgame.png",
             "/img/start.png",
             "/img/resume.png"
@@ -165,34 +165,38 @@ public class CardGameGui extends JPanel implements GameObserver {
     private void updateStatusBar(int state) {
         switch (state) {
             case GameState.IDLE_STATE:
-                statusbar.setText("Press S to start game!");
+                statusbar.setText(" Press S to start game!");
                 break;
             case GameState.PLAY_STATE:
-                statusbar.setText("Press ESC or P to pause game!");
+                statusbar.setText(" [Help] ESC or P:  pause game | B:  Revert | " + freecell.getMoveCount() + " moved");
                 break;
             case GameState.PAUSE_STATE:
-                statusbar.setText("Press S or R to resume game!");
+                statusbar.setText(" Press S or R to resume game!");
                 break;
             case GameState.END_STATE:
-                statusbar.setText("Press S to start game!");
+                statusbar.setText(" Press S to start game!");
                 break;
             default:
                 break;
         }
     }
 
-    public void start()
-    {
+    private void updateMoveCount() {
+        if (freecell.isPlayState()) {
+            statusbar.setText(" [Help] ESC or P:  pause game | B:  Revert | " + freecell.getMoveCount() + " moved");
+        }
+    }
+
+    public void start() {
         statusbar.setText("Press S to start game!");
     }
 
-    public void paint(Graphics g)
-    {
+    public void paint(Graphics g) {
         super.paint(g);
         Dimension size = getSize();
 
-        int width = (int)size.getWidth();
-        int height = (int)size.getHeight();
+        int width = (int) size.getWidth();
+        int height = (int) size.getHeight();
 
         if (screenBuffer == null) {
             screenBuffer = createImage(width, height);
@@ -203,7 +207,7 @@ public class CardGameGui extends JPanel implements GameObserver {
         drawEngine.onDraw(graphicsBuffer, freecell, cardGameMouseAdapter.hideCard, cardImages, buttonImage);
 
         if (cardGameMouseAdapter.isMovingCard) {
-            for(int i = 0; i < cardGameMouseAdapter.hideCard.size(); i++) {
+            for (int i = 0; i < cardGameMouseAdapter.hideCard.size(); i++) {
                 int px = cardGameMouseAdapter.mouseX - cardGameMouseAdapter.mouseDx;
                 int py = cardGameMouseAdapter.mouseY - cardGameMouseAdapter.mouseDy;
                 graphicsBuffer.drawImage(cardImages[cardGameMouseAdapter.hideCard.get(i)], px, py + i * 40, null);
@@ -218,13 +222,15 @@ public class CardGameGui extends JPanel implements GameObserver {
         public void keyPressed(KeyEvent e) {
             int keycode = e.getKeyCode();
             WinLog.i(TAG, Integer.toString(keycode));
-            switch(keycode) {
+            switch (keycode) {
                 case KeyEvent.VK_S:
                 case KeyEvent.VK_O:
                 case KeyEvent.VK_P:
+                case KeyEvent.VK_B:
                 case KeyEvent.VK_ESCAPE:
                     PlayCommand cmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, 0);
-                    if (cmdEngine.runCommand(cmd)){
+                    if (cmdEngine.runCommand(cmd)) {
+                        updateMoveCount();
                         repaint();
                     }
                     break;
@@ -238,8 +244,9 @@ public class CardGameGui extends JPanel implements GameObserver {
                 case KeyEvent.VK_7:
                 case KeyEvent.VK_8:
                     for (int i = 0; i < 4; i++) {
-                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.RESULT_DECK_1);
+                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i + Freecell.RESULT_DECK_1);
                         if (cmdEngine.runCommand(moveCmd)) {
+                            updateMoveCount();
                             repaint();
                             break;
                         }
@@ -249,10 +256,11 @@ public class CardGameGui extends JPanel implements GameObserver {
                 case KeyEvent.VK_9:
                 case KeyEvent.VK_0:
                 case 45: // -
-                case 61 : // =
+                case 61: // =
                     for (int i = 0; i < 4; i++) {
-                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.RESULT_DECK_1);
+                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i + Freecell.RESULT_DECK_1);
                         if (cmdEngine.runCommand(moveCmd)) {
+                            updateMoveCount();
                             repaint();
                             break;
                         }
@@ -269,8 +277,9 @@ public class CardGameGui extends JPanel implements GameObserver {
                 case KeyEvent.VK_U:
                 case KeyEvent.VK_I:
                     for (int i = 0; i < 4; i++) {
-                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.EMPTY_DECK_1);
+                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i + Freecell.EMPTY_DECK_1);
                         if (cmdEngine.runCommand(moveCmd)) {
+                            updateMoveCount();
                             repaint();
                             break;
                         }
@@ -315,15 +324,18 @@ public class CardGameGui extends JPanel implements GameObserver {
                 PlayCommand moveCmd = commandFactory.CreateCommand(pos.deck, 0, i + Freecell.RESULT_DECK_1, 0);
                 if (cmdEngine.runCommand(moveCmd)) {
                     repaint();
+                    updateMoveCount();
                     break;
                 }
             }
 
 
         }
+
         public void mouseEntered(MouseEvent e) {
             //WinLog.i(TAG, "Mouse Entered" + e.getX() + ":" + e.getY());
         }
+
         public void mouseExited(MouseEvent e) {
             //WinLog.i(TAG, "Mouse Exited");
         }
@@ -348,21 +360,21 @@ public class CardGameGui extends JPanel implements GameObserver {
                 isMovingCard = true;
                 mouseDx = mouseX - StartPos.x1;
                 mouseDy = mouseY - StartPos.y1;
-                WinLog.i(TAG,"StartDeck :" + StartPos.toString());
+                WinLog.i(TAG, "StartDeck :" + StartPos.toString());
             }
         }
 
         private void makeHideCardList() {
             hideCard.clear();
 
-           if( drawEngine != playDrawEngine) {
-               return;
-           }
+            if (drawEngine != playDrawEngine) {
+                return;
+            }
 
             int deck = StartPos.deck;
             int moveCount = StartPos.position + 1;
 
-            WinLog.i(TAG, "paint " + Integer.toString(deck) + ":" + Integer.toString(moveCount));
+            //WinLog.i(TAG, "paint " + Integer.toString(deck) + ":" + Integer.toString(moveCount));
 
             for (int i = 0; i < moveCount; i++) {
                 Card card = freecell.getDeck(deck).get(i);
@@ -378,7 +390,7 @@ public class CardGameGui extends JPanel implements GameObserver {
         }
 
         public void mouseReleased(MouseEvent e) {
-            WinLog.i(TAG, "Mouse Released "+ e.getX() + ":" + e.getY());
+            WinLog.i(TAG, "Mouse Released " + e.getX() + ":" + e.getY());
 
             if (StartPos == null) {
                 return;
@@ -387,32 +399,40 @@ public class CardGameGui extends JPanel implements GameObserver {
             mouseX = e.getX();
             mouseY = e.getY();
 
-            if (isMovingCard) {
-            //    mouseX += 50;
-            //    mouseY += 75;
-            }
-
             hideCard.clear();
 
-            EndPos = deckPositoinManager.getCardInfo(mouseX-mouseDx, mouseY-mouseDy);
+            // Check left top of moving card
+            EndPos = deckPositoinManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
+
+            // Check the mouse X,Y
+            if (EndPos == null) {
+                EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+            }
+
+            // Check Right top of moving card
+            if (EndPos == null) {
+                EndPos = deckPositoinManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
+            }
 
             if (EndPos == null) {
                 if (isMovingCard) {
+                    updateMoveCount();
                     repaint();
                 }
                 isMovingCard = false;
                 return;
             }
-            
-            WinLog.i(TAG,"RelesedDeck :" + EndPos.deck);
-            WinLog.i(TAG, "Mouse Released "+ StartPos.toString());
-            WinLog.i(TAG, "Mouse Released "+ EndPos.toString());
+
+            //WinLog.i(TAG,"Relesed Deck :" + EndPos.deck);
+            //WinLog.i(TAG, "Mouse Released "+ StartPos.toString());
+            //WinLog.i(TAG, "Mouse Released "+ EndPos.toString());
 
             // WinLog.i(TAG, deckPositoinManager.toString());
             PlayCommand cmd = commandFactory.CreateCommand(StartPos.deck, StartPos.position, EndPos.deck, EndPos.position);
 
             if (cmdEngine.runCommand(cmd) || isMovingCard) {
                 isMovingCard = false;
+                updateMoveCount();
                 repaint();
             }
 
@@ -421,7 +441,7 @@ public class CardGameGui extends JPanel implements GameObserver {
 
     class CardGameMouseMoveAdapter extends MouseMotionAdapter {
         public void mouseDragged(MouseEvent e) {
-           // WinLog.i(TAG, "mouseDragged" + e.getX() + ":" + e.getY());
+            // WinLog.i(TAG, "mouseDragged" + e.getX() + ":" + e.getY());
             if (cardGameMouseAdapter.isMovingCard) {
                 cardGameMouseAdapter.mouseX = e.getX();
                 cardGameMouseAdapter.mouseY = e.getY();
@@ -430,12 +450,12 @@ public class CardGameGui extends JPanel implements GameObserver {
         }
 
         public void mouseMoved(MouseEvent e) {
-           // WinLog.i(TAG, "mouseMoved" + e.getX() + ":" + e.getY()););
+            // WinLog.i(TAG, "mouseMoved" + e.getX() + ":" + e.getY()););
         }
     }
 
     private void loadImage() {
-        cardImages = new BufferedImage[imageName.length+1];
+        cardImages = new BufferedImage[imageName.length + 1];
         for (int i = 0; i < imageName.length; i++) {
             try {
                 cardImages[i] = ImageIO.read(getClass().getResource(imageName[i]));
@@ -445,7 +465,7 @@ public class CardGameGui extends JPanel implements GameObserver {
             }
         }
 
-        buttonImage = new BufferedImage[buttonImageName.length+1];
+        buttonImage = new BufferedImage[buttonImageName.length + 1];
 
         for (int i = 0; i < buttonImageName.length; i++) {
             try {

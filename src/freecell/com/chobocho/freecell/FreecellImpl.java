@@ -71,6 +71,10 @@ public class FreecellImpl implements Freecell {
         return setState(GameState.IDLE_STATE);
     }
 
+    public boolean back() {
+        return state.back();
+    }
+
     public boolean openDeck(int deck) {
         CLog.i(TAG,"openDeck: " + deck);
         return state.openCard(deck);
@@ -111,5 +115,9 @@ public class FreecellImpl implements Freecell {
 
     public boolean isFinishGame() {
         return state.isFinishGame();
+    }
+
+    public int getMoveCount() {
+        return state.getMoveCount();
     }
 }

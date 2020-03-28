@@ -8,6 +8,7 @@ public class PlayCommand {
     public static final String PAUSE = "pause";
     public static final String IDLE = "idle";
     public static final String WIN = "win";
+    public static final String BACK = "back";
 
     public String command;
     public int from;

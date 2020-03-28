@@ -59,4 +59,21 @@ public class PlayStateTest {
         assertEquals(playState.getDeck(Freecell.RESULT_DECK_1).push(card5), false);
     }
 
+    @Test
+    public void testHistory() {
+        System.out.println("testHistory");
+        playState.initGame();
+        String orignal = playState.toString();
+        System.out.println(orignal);
+        playState.moveCard(Freecell.BOARD_DECK_1, Freecell.EMPTY_DECK_1,1);
+        playState.moveCard(Freecell.BOARD_DECK_1, Freecell.EMPTY_DECK_2,1);
+        String afterMove = playState.toString();
+        System.out.println(afterMove);
+        playState.back();
+        playState.back();
+        playState.back();
+        String afterBack = playState.toString();
+        System.out.println(afterBack);
+        assertEquals(orignal, afterBack);
+    }
 }
