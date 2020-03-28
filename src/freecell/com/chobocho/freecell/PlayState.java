@@ -117,6 +117,12 @@ public class PlayState extends GameState {
                 result++;
             }
         }
+
+        for (Deck deck: boardDeck) {
+            if (deck.isEmpty()) {
+                result++;
+            }
+        }
         return result;
     }
 

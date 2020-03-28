@@ -32,6 +32,7 @@ public class CardGameGui extends JPanel implements GameObserver {
     private DrawEngine playDrawEngine;
     private DrawEngine pauseDrawEngine;
     private DrawEngine endDrawEngine;
+    private DrawEngine commonDrawEngine;
     private CommandFactory commandFactory;
     private DeckPositoinManager deckPositoinManager;
 
@@ -118,6 +119,7 @@ public class CardGameGui extends JPanel implements GameObserver {
         this.playDrawEngine = new PlayDrawEngineImpl();
         this.pauseDrawEngine = new PauseDrawEngineImpl();
         this.endDrawEngine = new EndDrawEngineImpl();
+        this.commonDrawEngine = new CommonDrawEngineImpl();
         this.deckPositoinManager = new DeckPositoinManagerImpl();
 
         drawEngine = this.idleDrawEngine;
@@ -197,13 +199,14 @@ public class CardGameGui extends JPanel implements GameObserver {
         }
 
         graphicsBuffer = screenBuffer.getGraphics();
-        onDrawCommon(graphicsBuffer, width, height);
-
+        commonDrawEngine.onDraw(graphicsBuffer, freecell, cardGameMouseAdapter.hideCard, cardImages, buttonImage);
         drawEngine.onDraw(graphicsBuffer, freecell, cardGameMouseAdapter.hideCard, cardImages, buttonImage);
 
         if (cardGameMouseAdapter.isMovingCard) {
             for(int i = 0; i < cardGameMouseAdapter.hideCard.size(); i++) {
-                graphicsBuffer.drawImage(cardImages[cardGameMouseAdapter.hideCard.get(i)], cardGameMouseAdapter.mouseX - 50, cardGameMouseAdapter.mouseY - 75 + i * 40, null);
+                int px = cardGameMouseAdapter.mouseX - cardGameMouseAdapter.mouseDx;
+                int py = cardGameMouseAdapter.mouseY - cardGameMouseAdapter.mouseDy;
+                graphicsBuffer.drawImage(cardImages[cardGameMouseAdapter.hideCard.get(i)], px, py + i * 40, null);
             }
         }
         g.drawImage(screenBuffer, 0, 0, null);
@@ -280,6 +283,9 @@ public class CardGameGui extends JPanel implements GameObserver {
     class CardGameMouseAdapter extends MouseAdapter {
         public CardPosition StartPos;
         public CardPosition EndPos;
+        public int mouseDx;
+        public int mouseDy;
+
         private boolean isMovingCard = false;
         public LinkedList<Integer> hideCard = new LinkedList<Integer>();
         private int mouseX;
@@ -338,6 +344,8 @@ public class CardGameGui extends JPanel implements GameObserver {
                 }
                 makeHideCardList();
                 isMovingCard = true;
+                mouseDx = mouseX - StartPos.x1;
+                mouseDy = mouseY - StartPos.y1;
                 WinLog.i(TAG,"StartDeck :" + StartPos.toString());
             }
         }
@@ -447,33 +455,5 @@ public class CardGameGui extends JPanel implements GameObserver {
         }
 
         WinLog.i(TAG, "Load image Success!");
-    }
-
-    private void onDrawCommon(Graphics g, int screenW, int screenH) {
-        graphicsBuffer.setColor(new Color(88, 214, 141 ));
-        graphicsBuffer.fillRect(0, 0, screenW, screenH);
-
-        int width = 100;
-        int height = 150;
-
-        // Result Deck
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 10, 10, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 20+width, 10, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 30+width*2, 10, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 40+width*3, 10, null);
-        // Empyt Deck
-        g.drawImage(cardImages[CARD_BG_IMAGE], 50+width*4, 10, null);
-        g.drawImage(cardImages[CARD_BG_IMAGE], 60+width*5, 10, null);
-        g.drawImage(cardImages[CARD_BG_IMAGE], 70+width*6, 10, null);
-        g.drawImage(cardImages[CARD_BG_IMAGE], 80+width*7, 10, null);
-
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 10, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 20+width, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 30+width*2, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 40+width*3, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 50+width*4, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 60+width*5, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 70+width*6, 20+height, null);
-        g.drawImage(cardImages[CARD_NONE_IMAGE], 80+width*7, 20+height, null);
     }
 }
