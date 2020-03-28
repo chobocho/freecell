@@ -10,7 +10,7 @@ public class BoardDeckCheckMethod implements CardCheckMethod {
        }
 
        if (ca.getNumber() == Card.NUMBER.NONE) {
-            return cb.getNumber() == Card.NUMBER.KING;
+            return true;
         }
 
        return  (ca.getColor() != cb.getColor()) &&

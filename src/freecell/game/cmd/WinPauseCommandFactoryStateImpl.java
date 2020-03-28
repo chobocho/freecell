@@ -5,7 +5,6 @@ import game.WinLog;
 
 public class WinPauseCommandFactoryStateImpl extends PauseCommandFactoryStateImpl implements CommandFactoryState {
     final static String TAG = "WinPauseCommandFactoryStateImpl";
-    int screenW = 910;
 
     @Override
     public PlayCommand createCommand(int event, int x, int y) {
@@ -36,7 +35,8 @@ public class WinPauseCommandFactoryStateImpl extends PauseCommandFactoryStateImp
     @Override
     public void addButtons() {
         WinLog.i(TAG, "addButtons");
-        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 250, 300+200,250+100));
-        buttons.push(new ButtonPosition(PlayCommand.IDLE, (screenW-200)/2, 450, 300+200,450+100));
+        int screenW = 910;
+        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 250, (screenW-200)/2+200,250+100));
+        buttons.push(new ButtonPosition(PlayCommand.IDLE, (screenW-200)/2, 450, (screenW-200)/2+200,450+100));
     }
 }

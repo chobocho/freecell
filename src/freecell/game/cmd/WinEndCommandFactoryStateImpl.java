@@ -5,7 +5,6 @@ import game.WinLog;
 
 public class WinEndCommandFactoryStateImpl extends EndCommandFactoryStateImpl implements CommandFactoryState {
     final static String TAG = "WinEndCommandFactoryStateImpl";
-    int screenW = 910;
 
     @Override
     public PlayCommand createCommand(int event, int x, int y) {
@@ -36,6 +35,7 @@ public class WinEndCommandFactoryStateImpl extends EndCommandFactoryStateImpl im
     @Override
     public void addButtons() {
         WinLog.i(TAG, "addButtons");
-        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 300, 300 + 200, 300 + 100));
+        int screenW = 910;
+        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 300, (screenW-200)/2 + 200, 300 + 100));
     }
 }

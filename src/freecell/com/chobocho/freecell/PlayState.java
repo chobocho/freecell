@@ -92,6 +92,11 @@ public class PlayState extends GameState {
             CLog.e(TAG,"Deck " + from + " is empty!");
             return false;
         }
+
+        if (from >= Freecell.RESULT_DECK_1 && from <= Freecell.RESULT_DECK_4) {
+            return false;
+        }
+
         Card card = deckList.get(from).top();
         boolean result = deckList.get(to).push(card);
 

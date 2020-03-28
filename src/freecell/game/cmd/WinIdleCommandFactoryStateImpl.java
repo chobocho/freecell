@@ -5,14 +5,14 @@ import game.WinLog;
 
 public class WinIdleCommandFactoryStateImpl extends IdleCommandFactoryStateImpl implements CommandFactoryState {
     final static String TAG = "WinIdleCommandFactoryStateImpl";
-    int screenW = 910;
 
     @Override
     public PlayCommand createCommand(int event, int x, int y) {
         WinLog.i(TAG, "Event:" + Integer.toString(event));
         if (event == CommandFactory.KEYPRESS_EVENT) {
             switch(x) {
-                case 83:
+                case 79: // O
+                case 83: // S
                     return new PlayCommand(PlayCommand.PLAY, 0, 0);
             }
         }
@@ -36,7 +36,9 @@ public class WinIdleCommandFactoryStateImpl extends IdleCommandFactoryStateImpl 
 
     @Override
     public void addButtons() {
+        int screenW = 910;
         WinLog.i(TAG, "addButtons");
-        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 300, 300+200,300+100));
+        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 300, (screenW-200)/2+200,300+100));
+        WinLog.i(TAG,buttons.toString());
     }
 }

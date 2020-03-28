@@ -33,6 +33,14 @@ public class FreecellImpl implements Freecell {
         observer.updateState(state.getState());
     }
 
+    @Override
+    public boolean isMovableDeck(int deck) {
+        if (deck < Freecell.RESULT_DECK_1 || deck > Freecell.RESULT_DECK_4) {
+            return true;
+        }
+        return false;
+    }
+
     public void notifyToOberver() {
         for (GameObserver observer: observers) {
             observer.updateState(state.getState());

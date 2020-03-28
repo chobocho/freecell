@@ -216,18 +216,8 @@ public class CardGameGui extends JPanel implements GameObserver {
             int keycode = e.getKeyCode();
             WinLog.i(TAG, Integer.toString(keycode));
             switch(keycode) {
-                case KeyEvent.VK_1:
-                case KeyEvent.VK_2:
-                case KeyEvent.VK_3:
-                case KeyEvent.VK_4:
                 case KeyEvent.VK_S:
                 case KeyEvent.VK_O:
-                case KeyEvent.VK_A:
-                case KeyEvent.VK_D:
-                case KeyEvent.VK_F:
-                case KeyEvent.VK_G:
-                case KeyEvent.VK_H:
-                case KeyEvent.VK_J:
                 case KeyEvent.VK_P:
                 case KeyEvent.VK_ESCAPE:
                     PlayCommand cmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, 0);
@@ -236,6 +226,37 @@ public class CardGameGui extends JPanel implements GameObserver {
                     }
                     break;
 
+                case KeyEvent.VK_1:
+                case KeyEvent.VK_2:
+                case KeyEvent.VK_3:
+                case KeyEvent.VK_4:
+                case KeyEvent.VK_5:
+                case KeyEvent.VK_6:
+                case KeyEvent.VK_7:
+                case KeyEvent.VK_8:
+                    for (int i = 0; i < 4; i++) {
+                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.RESULT_DECK_1);
+                        if (cmdEngine.runCommand(moveCmd)) {
+                            repaint();
+                            break;
+                        }
+                    }
+                    break;
+
+                case KeyEvent.VK_9:
+                case KeyEvent.VK_0:
+                case 45: // -
+                case 61 : // =
+                    for (int i = 0; i < 4; i++) {
+                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.RESULT_DECK_1);
+                        if (cmdEngine.runCommand(moveCmd)) {
+                            repaint();
+                            break;
+                        }
+                    }
+                    break;
+
+
                 case KeyEvent.VK_Q:
                 case KeyEvent.VK_W:
                 case KeyEvent.VK_E:
@@ -243,8 +264,9 @@ public class CardGameGui extends JPanel implements GameObserver {
                 case KeyEvent.VK_T:
                 case KeyEvent.VK_Y:
                 case KeyEvent.VK_U:
+                case KeyEvent.VK_I:
                     for (int i = 0; i < 4; i++) {
-                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.RESULT_DECK_1);
+                        PlayCommand moveCmd = commandFactory.CreateCommand(CommandFactory.KEYPRESS_EVENT, keycode, i+ Freecell.EMPTY_DECK_1);
                         if (cmdEngine.runCommand(moveCmd)) {
                             repaint();
                             break;
@@ -278,13 +300,8 @@ public class CardGameGui extends JPanel implements GameObserver {
             }
 
             CardPosition pos = deckPositoinManager.getCardInfo(mx, my);
-            if (pos == null) {
-                return;
-            }
-            if (pos.deck == Freecell.RESULT_DECK_1 ||
-                    pos.deck == Freecell.RESULT_DECK_2 ||
-                    pos.deck == Freecell.RESULT_DECK_3 ||
-                    pos.deck == Freecell.RESULT_DECK_4) {
+
+            if (pos == null || !freecell.isMovableDeck(pos.deck)) {
                 return;
             }
 
@@ -315,6 +332,10 @@ public class CardGameGui extends JPanel implements GameObserver {
             StartPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
 
             if (StartPos != null) {
+                if (!freecell.isMovableDeck(StartPos.deck)) {
+                    StartPos = null;
+                    return;
+                }
                 makeHideCardList();
                 isMovingCard = true;
                 WinLog.i(TAG,"StartDeck :" + StartPos.toString());
