@@ -1,4 +1,4 @@
-package test.com.chobocho.solitaire;
+package test.com.chobocho.freecell;
 
 import com.chobocho.card.Card;
 import com.chobocho.freecell.Freecell;

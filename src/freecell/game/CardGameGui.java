@@ -332,6 +332,8 @@ public class CardGameGui extends JPanel implements GameObserver {
             WinLog.i(TAG, "Mouse Pressed " + e.getX() + ":" + e.getY());
             mouseX = e.getX();
             mouseY = e.getY();
+            mouseDx = 0;
+            mouseDy = 0;
 
             deckPositoinManager.initCardPosition(freecell);
 
@@ -392,7 +394,7 @@ public class CardGameGui extends JPanel implements GameObserver {
 
             hideCard.clear();
 
-            EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+            EndPos = deckPositoinManager.getCardInfo(mouseX-mouseDx, mouseY-mouseDy);
 
             if (EndPos == null) {
                 if (isMovingCard) {
