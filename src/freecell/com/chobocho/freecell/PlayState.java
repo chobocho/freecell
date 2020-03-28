@@ -98,10 +98,6 @@ public class PlayState extends GameState {
             return false;
         }
 
-        if (from >= Freecell.RESULT_DECK_1 && from <= Freecell.RESULT_DECK_4) {
-            return false;
-        }
-
         Card card = deckList.get(from).top();
         boolean result = deckList.get(to).push(card);
 
@@ -135,6 +131,10 @@ public class PlayState extends GameState {
     public boolean moveCard(int from, int to, int count) {
         boolean result = false;
 
+        if (from >= Freecell.RESULT_DECK_1 && from <= Freecell.RESULT_DECK_4) {
+            return false;
+        }
+
         if (count == 1) {
             result = moveCard(from, to);
             if (result) {
@@ -142,6 +142,14 @@ public class PlayState extends GameState {
                 moveCount++;
             }
             return result;
+        }
+
+        if (to >= Freecell.EMPTY_DECK_1 && to <= Freecell.EMPTY_DECK_4) {
+            return false;
+        }
+
+        if (to >= Freecell.RESULT_DECK_1 && to <= Freecell.RESULT_DECK_4) {
+            return false;
         }
 
         if (count > getEmpytDeckCount()+1) {
