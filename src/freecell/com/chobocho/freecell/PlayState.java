@@ -184,10 +184,16 @@ public class PlayState extends GameState {
     }
 
     private void moveCardFroced(int from, int to, int count) {
+        Deck tmpDec = new PlayDeck();
+
         for (int i = 0; i < count; i++) {
             Card card = deckList.get(from).pop();
             card.close();
-            deckList.get(to).push(card);
+            tmpDec.push(card);
+        }
+
+        while (!tmpDec.isEmpty()) {
+            deckList.get(to).push(tmpDec.pop());
         }
         deckList.get(to).openAll();
     }
@@ -232,8 +238,12 @@ public class PlayState extends GameState {
     }
 
     @Override
-    public boolean back() {
-        if (history.isEmpty()) return false;
+    public boolean revert() {
+        CLog.i(TAG, "Revert");
+        if (history.isEmpty()) {
+            CLog.i(TAG, "History is empty!");
+            return false;
+        }
         MoveCommand cmd = history.pop();
         moveCardFroced(cmd.to, cmd.from, cmd.count);
         moveCount++;

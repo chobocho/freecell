@@ -71,8 +71,8 @@ public class FreecellImpl implements Freecell {
         return setState(GameState.IDLE_STATE);
     }
 
-    public boolean back() {
-        return state.back();
+    public boolean revert() {
+        return state.revert();
     }
 
     public boolean openDeck(int deck) {

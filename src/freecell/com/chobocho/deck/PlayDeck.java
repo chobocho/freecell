@@ -54,4 +54,10 @@ public class PlayDeck extends Deck {
     public int size() {
         return this.deck.size();
     }
+
+    public void openAll() {
+        for (int i = 0; i < deck.size(); i++) {
+            deck.get(i).open();
+        }
+    }
 }

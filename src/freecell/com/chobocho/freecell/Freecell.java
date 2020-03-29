@@ -33,7 +33,7 @@ public interface Freecell {
     public boolean idle();
     public void register(GameObserver observer);
 
-    public boolean back();
+    public boolean revert();
     public boolean isMovableDeck(int deck);
     public boolean isPlayState();
     public boolean isFinishGame();

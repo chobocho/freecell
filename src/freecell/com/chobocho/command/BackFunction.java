@@ -5,6 +5,6 @@ import com.chobocho.freecell.Freecell;
 public class BackFunction implements ComandFunction {
     @Override
     public boolean run(Freecell game, int from, int to, int count) {
-        return game.back();
+        return game.revert();
     }
 }
