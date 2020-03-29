@@ -232,7 +232,7 @@ public class PlayState extends GameState {
     }
 
     @Override
-    public boolean back() {
+    public boolean revert() {
         if (history.isEmpty()) return false;
         MoveCommand cmd = history.pop();
         moveCardFroced(cmd.to, cmd.from, cmd.count);

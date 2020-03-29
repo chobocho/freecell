@@ -69,9 +69,9 @@ public class PlayStateTest {
         playState.moveCard(Freecell.BOARD_DECK_1, Freecell.EMPTY_DECK_2,1);
         String afterMove = playState.toString();
         System.out.println(afterMove);
-        playState.back();
-        playState.back();
-        playState.back();
+        playState.revert();
+        playState.revert();
+        playState.revert();
         String afterBack = playState.toString();
         System.out.println(afterBack);
         assertEquals(orignal, afterBack);

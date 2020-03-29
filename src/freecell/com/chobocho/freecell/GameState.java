@@ -10,6 +10,7 @@ public class GameState {
     public static final int PAUSE_STATE = 2;
     public static final int END_STATE = 3;
 
+
     public Deck getDeck(int deck) {
         return null;
     }
@@ -38,7 +39,7 @@ public class GameState {
         return false;
     }
 
-    public boolean back() {
+    public boolean revert() {
         return false;
     }
 
