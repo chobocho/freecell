@@ -33,4 +33,13 @@ public class CardTest {
         Card card = new Card(Card.FIGURE.SPADE, Card.NUMBER.ACE);
         assert(card.getNumber().getValue() == 1);
     }
+
+    @Test
+    public void testInt() throws Exception {
+        Card card = new Card(Card.FIGURE.SPADE, Card.NUMBER.ACE);
+        assertEquals(card.toInt(), 130);
+        Card card2 = new Card(130);
+        assertEquals(card.getFigure(), card2.getFigure());
+        assertEquals(card.toString(), card2.toString());
+    }
 }
