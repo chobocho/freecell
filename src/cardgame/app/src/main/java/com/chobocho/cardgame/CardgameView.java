@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -57,7 +59,7 @@ public class CardgameView extends View implements GameObserver {
     private DeckPositoinManager deckPositoinManager;
 
     Bitmap[] cardImages   = new Bitmap[55];
-    Bitmap[]  buttonImage = new Bitmap[3];
+    Bitmap[]  buttonImage = new Bitmap[4];
 
     private static final int EMPTY_MESSAGE = 0;
     private HandlerThread playerHandlerThread;
@@ -67,6 +69,8 @@ public class CardgameView extends View implements GameObserver {
 
     public CardPosition StartPos;
     public CardPosition EndPos;
+    public int currentMouseX = 0;
+    public int currentMouseY = 0;
     public int mouseDx;
     public int mouseDy;
 
@@ -163,10 +167,11 @@ public class CardgameView extends View implements GameObserver {
         int[] buttonImageName = {
                 R.drawable.newgame,
                 R.drawable.start,
-                R.drawable.resume
+                R.drawable.resume,
+                R.drawable.pause
         };
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             buttonImage[i] = BitmapFactory.decodeResource(mContext.getResources(), buttonImageName[i]);
         }
 
@@ -241,6 +246,8 @@ public class CardgameView extends View implements GameObserver {
             return;
         }
 
+        Paint paint = new Paint();
+
         if (!isSetScale) {
             scaleX = canvas.getWidth() / 1080f;
             scaleY = canvas.getHeight() / 1920f;
@@ -256,8 +263,18 @@ public class CardgameView extends View implements GameObserver {
             canvas.scale(scaleX, scaleY);
         }
 
-        commonDrawEngine.onDraw(canvas, freecell,null, cardImages, buttonImage);
-        drawEngine.onDraw(canvas, freecell, null, cardImages, buttonImage);
+        commonDrawEngine.onDraw(canvas, freecell, hideCard, cardImages, buttonImage);
+        drawEngine.onDraw(canvas, freecell, hideCard, cardImages, buttonImage);
+
+        int width = 120;
+        int height = 180;
+        if (isMovingCard) {
+            for (int i = 0; i < hideCard.size(); i++) {
+                int px = currentMouseX - mouseDx;
+                int py = (currentMouseY - mouseDy) + i * 60;
+                canvas.drawBitmap(cardImages[hideCard.get(i)], null, new Rect(px, py,  px+width, py+height), paint);
+            }
+        }
     }
 
     public boolean onTouchEvent(MotionEvent event) {
@@ -289,6 +306,9 @@ public class CardgameView extends View implements GameObserver {
             onTouchPressed(x, y);
         }
 
+        if (MotionEvent.ACTION_MOVE == event.getAction()) {
+            onTouchMove(x, y);
+        }
         return true;
     }
 
@@ -354,6 +374,14 @@ public class CardgameView extends View implements GameObserver {
 
         if (cmdEngine.runCommand(cmd) || isMovingCard) {
             isMovingCard = false;
+            update();
+        }
+    }
+
+    private void onTouchMove(int mouseX, int mouseY) {
+        if (isMovingCard) {
+            currentMouseX = mouseX;
+            currentMouseY = mouseY;
             update();
         }
     }

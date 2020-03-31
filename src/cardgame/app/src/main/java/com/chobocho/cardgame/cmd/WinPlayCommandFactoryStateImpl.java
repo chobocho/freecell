@@ -70,7 +70,11 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
                     return new PlayCommand(PlayCommand.PAUSE, 0, 0);
             }
         } else if (event == CommandFactory.MOUSE_CLICK_EVENT) {
-
+                for (ButtonPosition btn: buttons) {
+                    if (btn.isInRange(x, y)) {
+                        return new PlayCommand(btn.id, 0, 0);
+                    }
+                }
         } else {
             AndroidLog.i(TAG, "Unknown Event:" + Integer.toString(x) + " : " + Integer.toString(y));
         }
@@ -80,5 +84,12 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
 	@Override
     public void addButtons() {
         AndroidLog.i(TAG, "addButtons");
+        int screenW = 1080;
+        int screenH = 1920;
+
+        int x1 = screenW - 200;
+        int y1 = screenH - 200;
+
+        buttons.push(new ButtonPosition(PlayCommand.PAUSE, x1, y1, x1+180,y1+180));
     }
 }
