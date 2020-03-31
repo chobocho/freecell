@@ -42,6 +42,7 @@ public class CommandEngine {
         CLog.i(TAG, command.toString());
         boolean result = functionMap.get(command.command).run(this.game, command.from, command.to, command.count);
         if (game.isFinishGame()) {
+            isRunning = false;
             return functionMap.get(PlayCommand.WIN).run(this.game, 0, 0, 0);
         }
         isRunning = false;
