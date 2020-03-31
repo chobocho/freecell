@@ -6,23 +6,23 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.chobocho.cardgame.AndroidLog;
 import com.chobocho.freecell.Freecell;
 import java.util.LinkedList;
 
 public class IdleDrawEngineImpl implements DrawEngine {
     final static String TAG = "IdleDrawEngineImpl";
-    final static int CARD_NONE_IMAGE = 53;
-    int width = 100;
-    int height = 150;
-    int cardCap = 20;
-    int screenW = 910;
+    int screenW = 1080;
+    int screenH = 1920;
+    int PLAY_GAME_IMAGE = 1;
 
     @Override
     public void onDraw(Canvas g, Freecell game, LinkedList<Integer> hideCard, Bitmap[] cardImages, Bitmap[] buttonImages) {
-       //g.drawImage(buttonImages[CardGameGui.PLAY_GAME_IMAGE], (screenW-200)/2, 300, null);
+        Paint paint = new Paint();
+        int x1 = (screenW-400)/2;
+        int y1 = (screenH-200)/2;
+        g.drawBitmap(buttonImages[PLAY_GAME_IMAGE], null, new Rect( x1,  y1, x1+400, y1+200), paint);
+        AndroidLog.i(TAG, "Event:" + Integer.toString(x1) + " : " + Integer.toString(y1));
     }
 
-    private void onDrawBoardDeck(Canvas g, Bitmap[] cardImages, Freecell game) {
-
-    }
 }

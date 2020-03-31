@@ -5,17 +5,18 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
 
+import com.chobocho.card.Card;
 import com.chobocho.cardgame.cmd.DeckPositoinManagerImpl;
 import com.chobocho.cardgame.ui.CommonDrawEngineImpl;
 import com.chobocho.cardgame.ui.DrawEngine;
@@ -23,12 +24,16 @@ import com.chobocho.cardgame.ui.EndDrawEngineImpl;
 import com.chobocho.cardgame.ui.IdleDrawEngineImpl;
 import com.chobocho.cardgame.ui.PauseDrawEngineImpl;
 import com.chobocho.cardgame.ui.PlayDrawEngineImpl;
+import com.chobocho.command.CardPosition;
 import com.chobocho.command.CommandEngine;
 import com.chobocho.command.CommandFactory;
 import com.chobocho.command.DeckPositoinManager;
+import com.chobocho.command.PlayCommand;
 import com.chobocho.freecell.Freecell;
 import com.chobocho.freecell.GameObserver;
 import com.chobocho.freecell.GameState;
+
+import java.util.LinkedList;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -54,13 +59,23 @@ public class CardgameView extends View implements GameObserver {
     private DeckPositoinManager deckPositoinManager;
 
     Bitmap[] cardImages   = new Bitmap[55];
-    Bitmap[]  buttonImage = new Bitmap[3];
+    Bitmap[]  buttonImage = new Bitmap[5];
 
     private static final int EMPTY_MESSAGE = 0;
     private HandlerThread playerHandlerThread;
     private Handler playerHandler;
     private int gameSpeed = 1000;
     private int highScore = 0;
+
+    public CardPosition StartPos;
+    public CardPosition EndPos;
+    public int currentMouseX = 0;
+    public int currentMouseY = 0;
+    public int mouseDx;
+    public int mouseDy;
+
+    private boolean isMovingCard = false;
+    public LinkedList<Integer> hideCard = new LinkedList<Integer>();
 
     public CardgameView(Context context, Freecell freecell, CommandEngine cmdEngine) {
         super(context);
@@ -69,6 +84,7 @@ public class CardgameView extends View implements GameObserver {
         this.cmdEngine = cmdEngine;
         isSetScale = false;
         needScaleCanvas = false;
+        loadImage();
 
         this.idleDrawEngine = new IdleDrawEngineImpl();
         this.playDrawEngine = new PlayDrawEngineImpl();
@@ -78,7 +94,9 @@ public class CardgameView extends View implements GameObserver {
         this.deckPositoinManager = new DeckPositoinManagerImpl();
 
         drawEngine = this.idleDrawEngine;
-        loadImage();
+
+        commandFactory = new AndroidCommandFactory();
+        this.freecell.register(commandFactory);
 
        //createPlayerThread();
     }
@@ -149,10 +167,12 @@ public class CardgameView extends View implements GameObserver {
         int[] buttonImageName = {
                 R.drawable.newgame,
                 R.drawable.start,
-                R.drawable.resume
+                R.drawable.resume,
+                R.drawable.pause,
+                R.drawable.revert
         };
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             buttonImage[i] = BitmapFactory.decodeResource(mContext.getResources(), buttonImageName[i]);
         }
 
@@ -227,6 +247,8 @@ public class CardgameView extends View implements GameObserver {
             return;
         }
 
+        Paint paint = new Paint();
+
         if (!isSetScale) {
             scaleX = canvas.getWidth() / 1080f;
             scaleY = canvas.getHeight() / 1920f;
@@ -242,17 +264,24 @@ public class CardgameView extends View implements GameObserver {
             canvas.scale(scaleX, scaleY);
         }
 
-        commonDrawEngine.onDraw(canvas, freecell,null, cardImages, buttonImage);
-        drawEngine.onDraw(canvas, freecell, null, cardImages, buttonImage);
+        commonDrawEngine.onDraw(canvas, freecell, hideCard, cardImages, buttonImage);
+        drawEngine.onDraw(canvas, freecell, hideCard, cardImages, buttonImage);
+
+        int width = 120;
+        int height = 180;
+        if (isMovingCard) {
+            for (int i = 0; i < hideCard.size(); i++) {
+                int px = currentMouseX - mouseDx;
+                int py = (currentMouseY - mouseDy) + i * 60;
+                canvas.drawBitmap(cardImages[hideCard.get(i)], null, new Rect(px, py,  px+width, py+height), paint);
+            }
+        }
     }
 
     public boolean onTouchEvent(MotionEvent event) {
         Log.d(LOG_TAG, ">> X: " + event.getX() + " Y: " + event.getY());
 
         if (freecell == null) {
-            return false;
-        }
-        if (MotionEvent.ACTION_DOWN != event.getAction()) {
             return false;
         }
 
@@ -267,8 +296,122 @@ public class CardgameView extends View implements GameObserver {
         }
 
         Log.d(LOG_TAG, ">> X: " + x + " Y: " + y);
-        return false;
+
+        Log.d(LOG_TAG, Integer.toString(event.getAction()));
+
+        if (MotionEvent.ACTION_UP == event.getAction()) {
+            onTouchReleased(x, y);
+        }
+
+        if (MotionEvent.ACTION_DOWN == event.getAction()) {
+            onTouchPressed(x, y);
+        }
+
+        if (MotionEvent.ACTION_MOVE == event.getAction()) {
+            onTouchMove(x, y);
+        }
+        return true;
     }
+
+    private void onTouchPressed(int mouseX, int mouseY) {
+        Log.i(LOG_TAG, "Mouse Pressed " + mouseX + ":" + mouseY);
+        mouseDx = 0;
+        mouseDy = 0;
+
+        deckPositoinManager.initCardPosition(freecell);
+
+        StartPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+
+        if (StartPos != null) {
+            if (!freecell.isMovableDeck(StartPos.deck)) {
+                StartPos = null;
+                return;
+            }
+            makeHideCardList();
+            isMovingCard = true;
+            mouseDx = mouseX - StartPos.x1;
+            mouseDy = mouseY - StartPos.y1;
+            Log.i(LOG_TAG, "StartDeck :" + StartPos.toString());
+        }
+    }
+
+    public void onTouchReleased(int mouseX, int mouseY) {
+        Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
+
+        if (StartPos == null) {
+            PlayCommand cmd = commandFactory.CreateCommand(CommandFactory.MOUSE_CLICK_EVENT, mouseX, mouseY);
+            if (cmdEngine.runCommand(cmd)) {
+                update();
+            }
+            return;
+        }
+
+        Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
+
+        hideCard.clear();
+
+        // Check left top of moving card
+        EndPos = deckPositoinManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
+
+        // Check the mouse X,Y
+        if (EndPos == null) {
+            EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+        }
+
+        // Check Right top of moving card
+        if (EndPos == null) {
+            EndPos = deckPositoinManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
+        }
+
+        if (EndPos == null) {
+            if (isMovingCard) {
+                update();
+            }
+            isMovingCard = false;
+            return;
+        }
+
+        PlayCommand cmd = commandFactory.CreateCommand(StartPos.deck, StartPos.position, EndPos.deck, EndPos.position);
+
+        if (cmdEngine.runCommand(cmd) || isMovingCard) {
+            isMovingCard = false;
+            update();
+        }
+    }
+
+    private void onTouchMove(int mouseX, int mouseY) {
+        if (isMovingCard) {
+            currentMouseX = mouseX;
+            currentMouseY = mouseY;
+            update();
+        }
+    }
+
+    private void makeHideCardList() {
+        hideCard.clear();
+
+        if (drawEngine != playDrawEngine) {
+            return;
+        }
+
+        int deck = StartPos.deck;
+        int moveCount = StartPos.position + 1;
+
+        //WinLog.i(TAG, "paint " + Integer.toString(deck) + ":" + Integer.toString(moveCount));
+
+        for (int i = 0; i < moveCount; i++) {
+            Card card = freecell.getDeck(deck).get(i);
+            if (card != null) {
+                // WinLog.i(TAG, card.toString());
+                int cardNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
+                hideCard.push(cardNumber);
+                // WinLog.i(TAG, card.toString() + " : " + Integer.toString(imageNumber));
+            } else {
+                Log.i(LOG_TAG, "Card is null!");
+            }
+        }
+    }
+
 
     private void loadHIghScore() {
         Log.d(LOG_TAG, "load()");

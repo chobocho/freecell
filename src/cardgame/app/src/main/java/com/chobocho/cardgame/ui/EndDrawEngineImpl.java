@@ -2,6 +2,8 @@ package com.chobocho.cardgame.ui;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 
 import com.chobocho.card.Card;
 import com.chobocho.deck.Deck;
@@ -12,9 +14,19 @@ import java.util.LinkedList;
 
 public class EndDrawEngineImpl implements DrawEngine {
     final static String TAG = "EndDrawEngineImpl";
-    final static int CARD_NONE_IMAGE = 53;
-    int width = 100;
-    int screenW = 910;
+
+    int screenW = 1080;
+    int screenH = 1920;
+
+    int NEW_GAME_IMAGE = 0;
+    int CARD_BG_IMAGE = 0;
+    int CARD_NONE_IMAGE = 53;
+    int CARD_ABG_IMAGE = 54;
+
+    int width = 120;
+    int height = 180;
+    int cardCap = 30;
+    Paint paint = new Paint();
 
     public EndDrawEngineImpl() {
 
@@ -23,11 +35,10 @@ public class EndDrawEngineImpl implements DrawEngine {
     @Override
     public void onDraw(Canvas g, Freecell game, LinkedList<Integer> hideCard, Bitmap[] cardImages, Bitmap[] buttonImages) {
         onDrawResultDeck(g, cardImages, game);
-        //g.drawImage(buttonImages[CardGameGui.NEW_GAME_IMAGE], (screenW-200)/2, 300, null);
+        g.drawBitmap(buttonImages[NEW_GAME_IMAGE], null, new Rect( (screenW-400)/2, (screenH-200)/2,  (screenW-400)/2+400, (screenH-200)/2+200), paint);
     }
 
     private void onDrawResultDeck(Canvas g, Bitmap[] cardImages, Freecell game) {
-        //WinLog.i(TAG, "onDrawResultDeck");
         Deck deck = new PlayDeck();
 
         for (int i = 0; i < 4; i++) {
@@ -39,10 +50,10 @@ public class EndDrawEngineImpl implements DrawEngine {
                     continue;
                 }
                 int imgNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
-                //g.drawImage(cardImages[imgNumber], 10 + width * i + 10 * i, 10, null);
+                int x1 = 10 + width * i + 10 * i;
+                int y1 = 10;
+                g.drawBitmap(cardImages[imgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
             }
         }
-
-        //g.drawImage(cardImages[CARD_NONE_IMAGE], 70+width*6, 10, null);
     }
 }
