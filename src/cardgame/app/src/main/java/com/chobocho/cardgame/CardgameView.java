@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -275,6 +276,15 @@ public class CardgameView extends View implements GameObserver {
                 int py = (currentMouseY - mouseDy) + i * 60;
                 canvas.drawBitmap(cardImages[hideCard.get(i)], null, new Rect(px, py,  px+width, py+height), paint);
             }
+        }
+
+        int screenW = 1080;
+        int screenH = 1920;
+
+        if (freecell.isPlayState()) {
+            paint.setColor(Color.BLUE);
+            paint.setTextSize(60);
+            canvas.drawText("Move: " + Integer.toString(freecell.getMoveCount()), 50, screenH - 80, paint);
         }
     }
 
