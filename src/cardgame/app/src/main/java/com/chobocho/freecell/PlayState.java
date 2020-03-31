@@ -152,7 +152,7 @@ public class PlayState extends GameState {
             return false;
         }
 
-        if (count > getEmpytDeckCount()+1) {
+        if (count > getEmpytDeckCount()) {
             CLog.i(TAG, "Empty deck count is samller than " + count);
             return false;
         }

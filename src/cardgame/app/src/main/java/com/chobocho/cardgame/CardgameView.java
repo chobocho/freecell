@@ -345,6 +345,21 @@ public class CardgameView extends View implements GameObserver {
         }
     }
 
+    private boolean runCommand(CardPosition pos) {
+        if (pos == null) {
+            return false;
+        }
+        PlayCommand cmd = commandFactory.CreateCommand(StartPos.deck, StartPos.position, pos.deck, pos.position);
+
+        if (cmdEngine.runCommand(cmd)) {
+            update();
+            return true;
+        }
+
+        return false;
+    }
+
+
     public void onTouchReleased(int mouseX, int mouseY) {
         Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
         isMovingCard = false;
@@ -363,28 +378,19 @@ public class CardgameView extends View implements GameObserver {
 
         // Check left top of moving card
         EndPos = deckPositoinManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
-
-        // Check the mouse X,Y
-        if (EndPos == null) {
-            EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
-        }
-
-        // Check Right top of moving card
-        if (EndPos == null) {
-            EndPos = deckPositoinManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
-        }
-
-        if (EndPos == null) {
-            if (isMovingCard) {
-                update();
-            }
+        if (runCommand(EndPos)) {
             return;
         }
 
-        PlayCommand cmd = commandFactory.CreateCommand(StartPos.deck, StartPos.position, EndPos.deck, EndPos.position);
+        // Check the mouse X,Y
+        EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+        if (runCommand(EndPos)) {
+            return;
+        }
 
-        if (cmdEngine.runCommand(cmd)) {
-            update();
+        // Check Right top of moving card
+        EndPos = deckPositoinManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
+        if (runCommand(EndPos)) {
             return;
         }
 
