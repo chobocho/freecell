@@ -347,6 +347,7 @@ public class CardgameView extends View implements GameObserver {
 
     public void onTouchReleased(int mouseX, int mouseY) {
         Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
+        isMovingCard = false;
 
         if (StartPos == null) {
             PlayCommand cmd = commandFactory.CreateCommand(CommandFactory.MOUSE_CLICK_EVENT, mouseX, mouseY);
@@ -377,15 +378,43 @@ public class CardgameView extends View implements GameObserver {
             if (isMovingCard) {
                 update();
             }
-            isMovingCard = false;
             return;
         }
 
         PlayCommand cmd = commandFactory.CreateCommand(StartPos.deck, StartPos.position, EndPos.deck, EndPos.position);
 
-        if (cmdEngine.runCommand(cmd) || isMovingCard) {
-            isMovingCard = false;
+        if (cmdEngine.runCommand(cmd)) {
             update();
+            return;
+        }
+
+        if (freecell.isMovableDeck(EndPos.deck) && (StartPos.deck == EndPos.deck)) {
+            for (int i = 0; i < 4; i++) {
+                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.RESULT_DECK_1, 0);
+                if (cmdEngine.runCommand(moveCmd)) {
+                    update();
+                    return;
+                }
+            }
+
+            for (int i = 0; i < 8; i++) {
+                if (EndPos.deck == (i+Freecell.BOARD_DECK_1)) {
+                    continue;
+                }
+                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.BOARD_DECK_1, 0);
+                if (cmdEngine.runCommand(moveCmd)) {
+                    update();
+                    return;
+                }
+            }
+
+            for (int i = 0; i < 4; i++) {
+                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.EMPTY_DECK_1, 0);
+                if (cmdEngine.runCommand(moveCmd)) {
+                    update();
+                    return;
+                }
+            }
         }
     }
 
