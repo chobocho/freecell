@@ -59,7 +59,7 @@ public class CardgameView extends View implements GameObserver {
     private DeckPositoinManager deckPositoinManager;
 
     Bitmap[] cardImages   = new Bitmap[55];
-    Bitmap[]  buttonImage = new Bitmap[4];
+    Bitmap[]  buttonImage = new Bitmap[5];
 
     private static final int EMPTY_MESSAGE = 0;
     private HandlerThread playerHandlerThread;
@@ -168,10 +168,11 @@ public class CardgameView extends View implements GameObserver {
                 R.drawable.newgame,
                 R.drawable.start,
                 R.drawable.resume,
-                R.drawable.pause
+                R.drawable.pause,
+                R.drawable.revert
         };
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             buttonImage[i] = BitmapFactory.decodeResource(mContext.getResources(), buttonImageName[i]);
         }
 

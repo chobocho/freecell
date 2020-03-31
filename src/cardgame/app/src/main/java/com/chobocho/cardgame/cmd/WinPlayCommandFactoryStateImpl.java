@@ -87,9 +87,12 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
         int screenW = 1080;
         int screenH = 1920;
 
-        int x1 = screenW - 200;
+        int x1 = screenW - 400;
         int y1 = screenH - 200;
+        buttons.push(new ButtonPosition(PlayCommand.BACK, x1, y1, x1+180,y1+180));
 
-        buttons.push(new ButtonPosition(PlayCommand.PAUSE, x1, y1, x1+180,y1+180));
+        int x2 = screenW - 200;
+        int y2 = screenH - 200;
+        buttons.push(new ButtonPosition(PlayCommand.PAUSE, x2, y2, x2+180,y2+180));
     }
 }

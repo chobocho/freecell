@@ -19,6 +19,7 @@ public class PlayDrawEngineImpl implements DrawEngine {
 
     int CARD_BG_IMAGE = 0;
     int PAUSE_BUTTON = 3;
+    int REVERT_BUTTON = 4;
 
     int width = 120;
     int height = 180;
@@ -35,9 +36,13 @@ public class PlayDrawEngineImpl implements DrawEngine {
         onDrawResultDeck(g, cardImages, game, hideCard);
         onDrawEmptyDeck(g, cardImages, game, hideCard);
 
-        int x1 = screenW - 200;
+        int x1 = screenW - 400;
         int y1 = screenH - 200;
-        g.drawBitmap(buttonImages[PAUSE_BUTTON], null, new Rect(x1, y1,  x1+180, y1+180), paint);
+        g.drawBitmap(buttonImages[REVERT_BUTTON], null, new Rect(x1, y1,  x1+180, y1+180), paint);
+
+        int x2 = screenW - 200;
+        int y2 = screenH - 200;
+        g.drawBitmap(buttonImages[PAUSE_BUTTON], null, new Rect(x2, y2,  x2+180, y2+180), paint);
 
     }
 
