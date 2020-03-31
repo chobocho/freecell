@@ -24,6 +24,8 @@ public class PlayDrawEngineImpl implements DrawEngine {
     int width = 120;
     int height = 180;
     int cardCap = 30;
+    Paint paint = new Paint();
+
     public PlayDrawEngineImpl() {
 
     }
@@ -37,7 +39,7 @@ public class PlayDrawEngineImpl implements DrawEngine {
 
     private void onDrawBoardDeck(Canvas g, Bitmap[] cardImages, Freecell game, LinkedList<Integer> hideCard) {
         Deck[] decks = new Deck[8];
-        Paint paint = new Paint();
+
 
         for (int i = 0; i < 8; i++) {
             decks[i] = game.getDeck(Freecell.BOARD_DECK_1+i);
@@ -49,15 +51,14 @@ public class PlayDrawEngineImpl implements DrawEngine {
                     int imgNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
 
                     if (hideCard == null || !hideCard.contains(imgNumber)) {
-                        //g.drawImage(cardImages[imgNumber], 10 + width * i + 10 * i, 20 + height + cap, null);
                         int x1 = 10 + width * i + 10 * i;
-                        int y1 =  40 + height + cap;
+                        int y1 = 40 + height + cap;
                         g.drawBitmap(cardImages[imgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
                     }
                     cap += cardCap*2;
                 } else {
                     int x1 = 10 + width * i + 10 * i;
-                    int y1 =  40 + height + cap;
+                    int y1 = 40 + height + cap;
                     g.drawBitmap(cardImages[CARD_BG_IMAGE], null, new Rect(x1, y1,  x1+width, y1+height), paint);
                     cap += cardCap;
                 }
@@ -78,12 +79,16 @@ public class PlayDrawEngineImpl implements DrawEngine {
                 //WinLog.i(TAG, card.toString());
                 int imgNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
                 if (hideCard == null || !hideCard.contains(imgNumber)) {
-                    //g.drawImage(cardImages[imgNumber], 10 + width * i + 10 * i, 10, null);
+                    int x1 = 10 + width * i + 10 * i;
+                    int y1 =  10;
+                    g.drawBitmap(cardImages[imgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
                 } else {
                     if (decks[i].size() > 1 ) {
                         Card preCard = decks[i].get(1);
                         int preImgNumber = (preCard.getFigure().getValue() - 1) * 13 + preCard.getNumber().getValue();
-                       //g.drawImage(cardImages[preImgNumber], 10 + width * i + 10 * i, 10, null);
+                        int x1 = 10 + width * i + 10 * i;
+                        int y1 =  10;
+                        g.drawBitmap(cardImages[preImgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
                     }
                 }
             }
@@ -104,12 +109,16 @@ public class PlayDrawEngineImpl implements DrawEngine {
                 //WinLog.i(TAG, card.toString());
                 int imgNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
                 if (hideCard == null || !hideCard.contains(imgNumber)) {
-                  //  g.drawImage(cardImages[imgNumber], startPos + 10 + width * i + 10 * i, 10, null);
+                    int x1 = startPos + 10 + width * i + 10 * i;
+                    int y1 = 10;
+                    g.drawBitmap(cardImages[imgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
                 } else {
                     if (decks[i].size() > 1 ) {
                         Card preCard = decks[i].get(1);
                         int preImgNumber = (preCard.getFigure().getValue() - 1) * 13 + preCard.getNumber().getValue();
-                   //    g.drawImage(cardImages[preImgNumber], startPos + 10 + width * i + 10 * i, 10, null);
+                        int x1 = startPos + 10 + width * i + 10 * i;
+                        int y1 = 10;
+                        g.drawBitmap(cardImages[preImgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
                     }
                 }
             }

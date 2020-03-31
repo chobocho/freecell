@@ -8,8 +8,10 @@ import com.chobocho.freecell.Freecell;
 
 public class DeckPositoinManagerImpl extends DeckPositoinManager {
     final public static String TAG = "DeckPositoinManagerImpl";
-    int width = 100;
-    int height = 150;
+
+    int width = 120;
+    int height = 180;
+    int cardCap = 30;
 
     public DeckPositoinManagerImpl() {
         super();
@@ -28,16 +30,13 @@ public class DeckPositoinManagerImpl extends DeckPositoinManager {
         }
 
         for (int i = 0; i < 8; i++) {
-            CardPosition deck = new CardPosition(Freecell.BOARD_DECK_1 + i, 0, 10 + (width + 10) * i, 20 + height, (width + 10) * (i + 1), 20 + height*2);
+            CardPosition deck = new CardPosition(Freecell.BOARD_DECK_1 + i, 0, 10 + (width + 10) * i, 40 + height, (width + 10) * (i + 1), 40 + height*2);
             addCardPosition(deck);
-            //WinLog.i(TAG, deck.toString());
         }
     }
 
     @Override
     public void initCardPosition(Freecell game) {
-        int cardCap = 20;
-
         clearCardPosition();
 
         if (!game.isPlayState()) {
@@ -52,17 +51,17 @@ public class DeckPositoinManagerImpl extends DeckPositoinManager {
                 continue;
             }
             int cap = 0;
+            int startY = 40;
             for (int j = boardDeck.size()-1, k = 0; j >= 0; j--, k++) {
                 int deckNumber = Freecell.BOARD_DECK_1 + i;
                 Card card = boardDeck.get(j);
                 CardPosition pos;
                 if (card.isOpen()) {
-                    pos = new CardPosition(deckNumber, j, 10 + (width + 10) * i, 20 + height + cap, (width + 10) * (i + 1), 20 + height*2 + cap);
+                    pos = new CardPosition(deckNumber, j, 10 + (width + 10) * i, startY + height + cap, (width + 10) * (i + 1), startY + height*2 + cap);
                     cap += cardCap*2;
-                    // WinLog.i(TAG,  pos.toString());
                     addCardPosition(pos);
                 } else {
-                    pos = new CardPosition(deckNumber, j, 10 + (width + 10) * i, 20 + height + cap, (width + 10) * (i + 1), 20 + height*2 + cap);
+                    pos = new CardPosition(deckNumber, j, 10 + (width + 10) * i, startY + height + cap, (width + 10) * (i + 1), startY + height*2 + cap);
                     cap += cardCap;
                 }
             }

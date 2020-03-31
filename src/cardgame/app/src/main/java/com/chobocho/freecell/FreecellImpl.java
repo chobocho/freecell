@@ -26,7 +26,6 @@ public class FreecellImpl implements Freecell {
         endState = new EndState();
 
         setState(PlayState.IDLE_STATE);
-        setState(PlayState.PLAY_STATE);
     }
 
     public void register(GameObserver observer) {

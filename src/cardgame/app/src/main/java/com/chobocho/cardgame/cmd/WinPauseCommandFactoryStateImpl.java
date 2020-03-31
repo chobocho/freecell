@@ -35,8 +35,14 @@ public class WinPauseCommandFactoryStateImpl extends PauseCommandFactoryStateImp
     @Override
     public void addButtons() {
         AndroidLog.i(TAG, "addButtons");
-        int screenW = 910;
-        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 250, (screenW-200)/2+200,250+100));
-        buttons.push(new ButtonPosition(PlayCommand.IDLE, (screenW-200)/2, 450, (screenW-200)/2+200,450+100));
+
+        int screenW = 1080;
+        int screenH = 1920;
+
+        int x1 = (screenW-400)/2;
+        int y1 = (screenH-200)/2;
+
+        buttons.push(new ButtonPosition(PlayCommand.PLAY, x1, y1-300, x1+400,y1-100));
+        buttons.push(new ButtonPosition(PlayCommand.IDLE, x1, y1+300, x1+400,y1+400));
     }
 }

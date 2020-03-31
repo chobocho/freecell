@@ -5,17 +5,16 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
 
+import com.chobocho.card.Card;
 import com.chobocho.cardgame.cmd.DeckPositoinManagerImpl;
 import com.chobocho.cardgame.ui.CommonDrawEngineImpl;
 import com.chobocho.cardgame.ui.DrawEngine;
@@ -23,12 +22,16 @@ import com.chobocho.cardgame.ui.EndDrawEngineImpl;
 import com.chobocho.cardgame.ui.IdleDrawEngineImpl;
 import com.chobocho.cardgame.ui.PauseDrawEngineImpl;
 import com.chobocho.cardgame.ui.PlayDrawEngineImpl;
+import com.chobocho.command.CardPosition;
 import com.chobocho.command.CommandEngine;
 import com.chobocho.command.CommandFactory;
 import com.chobocho.command.DeckPositoinManager;
+import com.chobocho.command.PlayCommand;
 import com.chobocho.freecell.Freecell;
 import com.chobocho.freecell.GameObserver;
 import com.chobocho.freecell.GameState;
+
+import java.util.LinkedList;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -62,6 +65,14 @@ public class CardgameView extends View implements GameObserver {
     private int gameSpeed = 1000;
     private int highScore = 0;
 
+    public CardPosition StartPos;
+    public CardPosition EndPos;
+    public int mouseDx;
+    public int mouseDy;
+
+    private boolean isMovingCard = false;
+    public LinkedList<Integer> hideCard = new LinkedList<Integer>();
+
     public CardgameView(Context context, Freecell freecell, CommandEngine cmdEngine) {
         super(context);
         this.mContext = context;
@@ -79,6 +90,9 @@ public class CardgameView extends View implements GameObserver {
         this.deckPositoinManager = new DeckPositoinManagerImpl();
 
         drawEngine = this.idleDrawEngine;
+
+        commandFactory = new AndroidCommandFactory();
+        this.freecell.register(commandFactory);
 
        //createPlayerThread();
     }
@@ -252,9 +266,6 @@ public class CardgameView extends View implements GameObserver {
         if (freecell == null) {
             return false;
         }
-        if (MotionEvent.ACTION_DOWN != event.getAction()) {
-            return false;
-        }
 
         Log.d(LOG_TAG, ">> scaleX: " + scaleX + " scaleY: " + scaleY);
 
@@ -267,8 +278,111 @@ public class CardgameView extends View implements GameObserver {
         }
 
         Log.d(LOG_TAG, ">> X: " + x + " Y: " + y);
-        return false;
+
+        Log.d(LOG_TAG, Integer.toString(event.getAction()));
+
+        if (MotionEvent.ACTION_UP == event.getAction()) {
+            onTouchReleased(x, y);
+        }
+
+        if (MotionEvent.ACTION_DOWN == event.getAction()) {
+            onTouchPressed(x, y);
+        }
+
+        return true;
     }
+
+    private void onTouchPressed(int mouseX, int mouseY) {
+        Log.i(LOG_TAG, "Mouse Pressed " + mouseX + ":" + mouseY);
+        mouseDx = 0;
+        mouseDy = 0;
+
+        deckPositoinManager.initCardPosition(freecell);
+
+        StartPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+
+        if (StartPos != null) {
+            if (!freecell.isMovableDeck(StartPos.deck)) {
+                StartPos = null;
+                return;
+            }
+            makeHideCardList();
+            isMovingCard = true;
+            mouseDx = mouseX - StartPos.x1;
+            mouseDy = mouseY - StartPos.y1;
+            Log.i(LOG_TAG, "StartDeck :" + StartPos.toString());
+        }
+    }
+
+    public void onTouchReleased(int mouseX, int mouseY) {
+        Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
+
+        if (StartPos == null) {
+            PlayCommand cmd = commandFactory.CreateCommand(CommandFactory.MOUSE_CLICK_EVENT, mouseX, mouseY);
+            if (cmdEngine.runCommand(cmd)) {
+                update();
+            }
+            return;
+        }
+
+        Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
+
+        hideCard.clear();
+
+        // Check left top of moving card
+        EndPos = deckPositoinManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
+
+        // Check the mouse X,Y
+        if (EndPos == null) {
+            EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+        }
+
+        // Check Right top of moving card
+        if (EndPos == null) {
+            EndPos = deckPositoinManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
+        }
+
+        if (EndPos == null) {
+            if (isMovingCard) {
+                update();
+            }
+            isMovingCard = false;
+            return;
+        }
+
+        PlayCommand cmd = commandFactory.CreateCommand(StartPos.deck, StartPos.position, EndPos.deck, EndPos.position);
+
+        if (cmdEngine.runCommand(cmd) || isMovingCard) {
+            isMovingCard = false;
+            update();
+        }
+    }
+
+    private void makeHideCardList() {
+        hideCard.clear();
+
+        if (drawEngine != playDrawEngine) {
+            return;
+        }
+
+        int deck = StartPos.deck;
+        int moveCount = StartPos.position + 1;
+
+        //WinLog.i(TAG, "paint " + Integer.toString(deck) + ":" + Integer.toString(moveCount));
+
+        for (int i = 0; i < moveCount; i++) {
+            Card card = freecell.getDeck(deck).get(i);
+            if (card != null) {
+                // WinLog.i(TAG, card.toString());
+                int cardNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
+                hideCard.push(cardNumber);
+                // WinLog.i(TAG, card.toString() + " : " + Integer.toString(imageNumber));
+            } else {
+                Log.i(LOG_TAG, "Card is null!");
+            }
+        }
+    }
+
 
     private void loadHIghScore() {
         Log.d(LOG_TAG, "load()");

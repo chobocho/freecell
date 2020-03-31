@@ -17,8 +17,10 @@ public class WinIdleCommandFactoryStateImpl extends IdleCommandFactoryStateImpl 
             }
         }
         else if (event == CommandFactory.MOUSE_CLICK_EVENT) {
+            AndroidLog.i(TAG, "Event:" + Integer.toString(x) + " : " + Integer.toString(y));
             for (ButtonPosition btn: buttons) {
                 if (btn.isInRange(x, y)) {
+                    AndroidLog.i(TAG, "FIND!");
                     if (btn.id.equals(PlayCommand.PLAY)) {
                         return new PlayCommand(btn.id, 0, 0);
                     }
@@ -36,9 +38,13 @@ public class WinIdleCommandFactoryStateImpl extends IdleCommandFactoryStateImpl 
 
     @Override
     public void addButtons() {
-        int screenW = 910;
+        int screenW = 1080;
+        int screenH = 1920;
+
         AndroidLog.i(TAG, "addButtons");
-        buttons.push(new ButtonPosition(PlayCommand.PLAY, (screenW-200)/2, 300, (screenW-200)/2+200,300+100));
+        int x1 = (screenW-400)/2;
+        int y1 = (screenH-200)/2;
+        buttons.push(new ButtonPosition(PlayCommand.PLAY, x1, y1, x1+400,y1+200));
         AndroidLog.i(TAG,buttons.toString());
     }
 }
