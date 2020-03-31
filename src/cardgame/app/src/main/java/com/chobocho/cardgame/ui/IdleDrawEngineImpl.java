@@ -11,18 +11,14 @@ import java.util.LinkedList;
 
 public class IdleDrawEngineImpl implements DrawEngine {
     final static String TAG = "IdleDrawEngineImpl";
-    final static int CARD_NONE_IMAGE = 53;
-    int width = 100;
-    int height = 150;
-    int cardCap = 20;
-    int screenW = 910;
+    int screenW = 1080;
+    int screenH = 1920;
+    int PLAY_GAME_IMAGE = 1;
 
     @Override
     public void onDraw(Canvas g, Freecell game, LinkedList<Integer> hideCard, Bitmap[] cardImages, Bitmap[] buttonImages) {
-       //g.drawImage(buttonImages[CardGameGui.PLAY_GAME_IMAGE], (screenW-200)/2, 300, null);
+        Paint paint = new Paint();
+        g.drawBitmap(buttonImages[PLAY_GAME_IMAGE], null, new Rect( (screenW-400)/2, (screenH-200)/2,  (screenW-400)/2+400, (screenH-200)/2+200), paint);
     }
 
-    private void onDrawBoardDeck(Canvas g, Bitmap[] cardImages, Freecell game) {
-
-    }
 }

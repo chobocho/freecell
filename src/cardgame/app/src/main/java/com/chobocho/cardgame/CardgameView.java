@@ -69,6 +69,7 @@ public class CardgameView extends View implements GameObserver {
         this.cmdEngine = cmdEngine;
         isSetScale = false;
         needScaleCanvas = false;
+        loadImage();
 
         this.idleDrawEngine = new IdleDrawEngineImpl();
         this.playDrawEngine = new PlayDrawEngineImpl();
@@ -78,7 +79,6 @@ public class CardgameView extends View implements GameObserver {
         this.deckPositoinManager = new DeckPositoinManagerImpl();
 
         drawEngine = this.idleDrawEngine;
-        loadImage();
 
        //createPlayerThread();
     }
