@@ -108,7 +108,8 @@ public class CardGameGui extends JPanel implements GameObserver {
             "/img/SJ.png",
             "/img/SQ.png",
             "/img/SK.png",
-            "/img/none.png"
+            "/img/none.png",
+            "/img/abg.png"
     };
 
     public CardGameGui(CardGameMain parent, Freecell freecell, CommandEngine cmdEngine) {
