@@ -341,7 +341,11 @@ public class CardGameGui extends JPanel implements GameObserver {
                 }
             }
 
-            for (int i = 0; i < 8; i++) {
+            if (pos.deck >= Freecell.EMPTY_DECK_1 && pos.deck <= Freecell.EMPTY_DECK_4) {
+                return;
+            }
+
+            for (int i = 0; i < 4; i++) {
                 PlayCommand moveCmd = commandFactory.CreateCommand(pos.deck, 0, i + Freecell.EMPTY_DECK_1, 0);
                 if (cmdEngine.runCommand(moveCmd)) {
                     repaint();
@@ -349,7 +353,6 @@ public class CardGameGui extends JPanel implements GameObserver {
                     return;
                 }
             }
-
         }
 
         public void mouseEntered(MouseEvent e) {
