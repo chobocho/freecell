@@ -9,7 +9,7 @@ import java.awt.*;
 
 public class CardGameMain extends JFrame {
     String TAG = "CardGameMain";
-    String Version = "V0.1105.TD1.1";
+    String Version = "V0.1105.TD1.2";
     JLabel statusbar;
 
     public CardGameMain() {
