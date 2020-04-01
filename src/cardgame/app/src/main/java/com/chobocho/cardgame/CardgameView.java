@@ -359,11 +359,51 @@ public class CardgameView extends View implements GameObserver {
         return false;
     }
 
+    private boolean onCheckCardClickEvent(int mouseX, int mouseY) {
+        EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+
+        if (EndPos == null) {
+            return false;
+        }
+
+        if (freecell.isMovableDeck(EndPos.deck) && (StartPos.deck == EndPos.deck)) {
+            for (int i = 0; i < 4; i++) {
+                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.RESULT_DECK_1, 0);
+                if (cmdEngine.runCommand(moveCmd)) {
+                    return true;
+                }
+            }
+
+            for (int i = 0; i < 8; i++) {
+                if (EndPos.deck == (i+Freecell.BOARD_DECK_1)) {
+                    continue;
+                }
+                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.BOARD_DECK_1, 0);
+                if (cmdEngine.runCommand(moveCmd)) {
+                    return true;
+                }
+            }
+
+            if (EndPos.deck >= Freecell.EMPTY_DECK_1 && EndPos.deck <= Freecell.EMPTY_DECK_4) {
+                return false;
+            }
+            
+            for (int i = 0; i < 4; i++) {
+                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.EMPTY_DECK_1, 0);
+                if (cmdEngine.runCommand(moveCmd)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     public void onTouchReleased(int mouseX, int mouseY) {
         Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
         isMovingCard = false;
 
+        // Press button event
         if (StartPos == null) {
             PlayCommand cmd = commandFactory.CreateCommand(CommandFactory.MOUSE_CLICK_EVENT, mouseX, mouseY);
             if (cmdEngine.runCommand(cmd)) {
@@ -375,6 +415,11 @@ public class CardgameView extends View implements GameObserver {
         Log.i(LOG_TAG, "Mouse released " + mouseX + ":" + mouseY);
 
         hideCard.clear();
+
+        if (onCheckCardClickEvent(mouseX, mouseY)) {
+            update();
+            return;
+        }
 
         // Check left top of moving card
         EndPos = deckPositoinManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
@@ -394,34 +439,7 @@ public class CardgameView extends View implements GameObserver {
             return;
         }
 
-        if (freecell.isMovableDeck(EndPos.deck) && (StartPos.deck == EndPos.deck)) {
-            for (int i = 0; i < 4; i++) {
-                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.RESULT_DECK_1, 0);
-                if (cmdEngine.runCommand(moveCmd)) {
-                    update();
-                    return;
-                }
-            }
-
-            for (int i = 0; i < 8; i++) {
-                if (EndPos.deck == (i+Freecell.BOARD_DECK_1)) {
-                    continue;
-                }
-                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.BOARD_DECK_1, 0);
-                if (cmdEngine.runCommand(moveCmd)) {
-                    update();
-                    return;
-                }
-            }
-
-            for (int i = 0; i < 4; i++) {
-                PlayCommand moveCmd = commandFactory.CreateCommand(EndPos.deck, 0, i + Freecell.EMPTY_DECK_1, 0);
-                if (cmdEngine.runCommand(moveCmd)) {
-                    update();
-                    return;
-                }
-            }
-        }
+        update();
     }
 
     private void onTouchMove(int mouseX, int mouseY) {
