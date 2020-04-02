@@ -14,7 +14,7 @@ public class PauseDrawEngineImpl implements DrawEngine {
     int screenH = 1920;
 
     int NEW_GAME_IMAGE = 0;
-    int RESUME_GAME_IMAGE = 1;
+    int RESUME_GAME_IMAGE = 2;
 
     public PauseDrawEngineImpl() {
     }
