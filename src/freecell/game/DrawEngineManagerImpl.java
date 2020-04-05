@@ -1,10 +1,11 @@
-package game.ui;
+package game;
 
 import com.chobocho.freecell.Freecell;
 import com.chobocho.freecell.GameObserver;
 import game.BoardProfile;
 import game.CardGameGui;
 import game.WinLog;
+import game.ui.*;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -96,7 +97,7 @@ public class DrawEngineManagerImpl implements DrawEngineManager, GameObserver {
     private void loadImage(String[] imageName, BufferedImage[] images) {
         for (int i = 0; i < imageName.length; i++) {
             try {
-                images[i] = ImageIO.read(getClass().getResource("../../" + imageName[i]));
+                images[i] = ImageIO.read(getClass().getResource(imageName[i]));
                 WinLog.i(TAG, "Load image Success! " + imageName[i]);
             } catch (IOException e) {
                 WinLog.i(TAG, "Load image fail! " + imageName[i]);
