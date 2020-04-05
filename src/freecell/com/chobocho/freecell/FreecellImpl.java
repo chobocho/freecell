@@ -25,7 +25,7 @@ public class FreecellImpl implements Freecell {
         pauseState = new PauseState();
         endState = new EndState();
 
-        setState(PlayState.IDLE_STATE);
+        setState(Freecell.IDLE_STATE);
     }
 
     public void register(GameObserver observer) {
@@ -57,18 +57,18 @@ public class FreecellImpl implements Freecell {
     }
 
     public boolean play() {
-        return setState(GameState.PLAY_STATE);
+        return setState(Freecell.PLAY_STATE);
     }
 
     public boolean pause() {
-        return setState(GameState.PAUSE_STATE);
+        return setState(Freecell.PAUSE_STATE);
     }
 
     public boolean winState() {
-        return setState(GameState.END_STATE);
+        return setState(Freecell.END_STATE);
     }
     public boolean idle() {
-        return setState(GameState.IDLE_STATE);
+        return setState(Freecell.IDLE_STATE);
     }
 
     public boolean revert() {
@@ -82,17 +82,17 @@ public class FreecellImpl implements Freecell {
 
     private boolean setState(int newState) {
         switch (newState) {
-            case GameState.IDLE_STATE:
+            case Freecell.IDLE_STATE:
                 playState.initGame();
                 state = idleState;
                 break;
-            case GameState.PLAY_STATE:
+            case Freecell.PLAY_STATE:
                 state = playState;
                 break;
-            case GameState.PAUSE_STATE:
+            case Freecell.PAUSE_STATE:
                 state = pauseState;
                 break;
-            case GameState.END_STATE:
+            case Freecell.END_STATE:
                 Card[] cards = new Card[4];
                 cards[0] = playState.getDeck(Freecell.RESULT_DECK_1).top();
                 cards[1] = playState.getDeck(Freecell.RESULT_DECK_2).top();

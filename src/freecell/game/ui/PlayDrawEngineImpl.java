@@ -3,12 +3,13 @@ package game.ui;
 import com.chobocho.card.Card;
 import com.chobocho.deck.Deck;
 import com.chobocho.freecell.Freecell;
+import game.BoardProfile;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 
-public class PlayDrawEngineImpl implements DrawEngine {
+public class PlayDrawEngineImpl extends DrawEngineImpl implements DrawEngine {
     final static String TAG = "PlayDrawEngineImpl";
     final static int CARD_NONE_IMAGE = 53;
     int width = 100;
@@ -20,7 +21,7 @@ public class PlayDrawEngineImpl implements DrawEngine {
     }
 
     @Override
-    public void onDraw(Graphics g, Freecell game, LinkedList<Integer> hideCard, BufferedImage[] cardImages, BufferedImage[] buttonImages) {
+    public void onDraw(Graphics g, Freecell game, BoardProfile boardProfile, LinkedList<Integer> hideCard, BufferedImage[] cardImages, BufferedImage[] buttonImages) {
         onDrawBoardDeck(g, cardImages, game, hideCard);
         onDrawResultDeck(g, cardImages, game, hideCard);
         onDrawEmptyDeck(g, cardImages, game, hideCard);
@@ -39,11 +40,11 @@ public class PlayDrawEngineImpl implements DrawEngine {
                     int imgNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
 
                     if (!hideCard.contains(imgNumber)) {
-                        g.drawImage(cardImages[imgNumber], 10 + width * i + 10 * i, 20 + height + cap, null);
+                        drawImage(g, cardImages[imgNumber], 10 + width * i + 10 * i, 20 + height + cap);
                     }
                     cap += cardCap*2;
                 } else {
-                    g.drawImage(cardImages[0], 10 + width * i + 10 * i, 20 + height + cap, null);
+                    drawImage(g, cardImages[0], 10 + width * i + 10 * i, 20 + height + cap);
                     cap += cardCap;
                 }
             }

@@ -4,11 +4,6 @@ import com.chobocho.card.Card;
 import com.chobocho.deck.Deck;
 
 public class GameState {
-    public static final int NONE_STATE = -1;
-    public static final int IDLE_STATE = 0;
-    public static final int PLAY_STATE = 1;
-    public static final int PAUSE_STATE = 2;
-    public static final int END_STATE = 3;
 
 
     public Deck getDeck(int deck) {
@@ -32,7 +27,7 @@ public class GameState {
     }
 
     public int getState() {
-        return NONE_STATE;
+        return Freecell.NONE_STATE;
     }
 
     public boolean openCard(int deck) {

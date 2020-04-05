@@ -20,15 +20,14 @@ public class CardGameMain extends JFrame {
 
         Freecell freecell = new FreecellImpl(new WinLog());
         CommandEngine cmdEngine = new CommandEngine(freecell);
-        CardGameGui cardGameGui = new CardGameGui(this, freecell, cmdEngine);
-        freecell.register(cardGameGui);
+        BoardProfile boardProfile = new BoardProfile();
+        CardGameGui cardGameGui = new CardGameGui(this, freecell, boardProfile, cmdEngine);
         add(cardGameGui);
-
-        cardGameGui.start();
 
         setSize(910, 800);
         setTitle("Freecell " + Version);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        cardGameGui.start();
     }
 
     public JLabel getStatusBar() {

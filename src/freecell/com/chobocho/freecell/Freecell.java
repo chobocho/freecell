@@ -6,6 +6,12 @@ import com.chobocho.deck.Deck;
  * 
  */
 public interface Freecell {
+    int NONE_STATE = -1;
+    int IDLE_STATE = 0;
+    int PLAY_STATE = 1;
+    int PAUSE_STATE = 2;
+    int END_STATE = 3;
+
     int INIT_DECK = 0;
     int RESULT_DECK_1 = 1;
     int RESULT_DECK_2 = 2;

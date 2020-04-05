@@ -1,6 +1,7 @@
 package game.ui;
 
 import com.chobocho.freecell.Freecell;
+import game.BoardProfile;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -8,7 +9,7 @@ import java.util.LinkedList;
 
 public class CommonDrawEngineImpl implements DrawEngine {
     @Override
-    public void onDraw(Graphics g, Freecell game, LinkedList<Integer> hideCard, BufferedImage[] cardImages, BufferedImage[] buttonImages) {
+    public void onDraw(Graphics g, Freecell game, BoardProfile boardProfile, LinkedList<Integer> hideCard, BufferedImage[] cardImages, BufferedImage[] buttonImages) {
         onDrawCommon(g, cardImages, buttonImages);
     }
 

@@ -8,5 +8,5 @@ public class PauseState extends GameState {
     public PauseState() {
     }
 
-    public int getState() { return PAUSE_STATE; }
+    public int getState() { return Freecell.PAUSE_STATE; }
 }

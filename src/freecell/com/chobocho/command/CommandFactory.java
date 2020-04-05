@@ -1,7 +1,7 @@
 package com.chobocho.command;
 
+import com.chobocho.freecell.Freecell;
 import com.chobocho.freecell.GameObserver;
-import com.chobocho.freecell.GameState;
 import game.WinLog;
 
 public abstract class CommandFactory implements GameObserver {
@@ -19,16 +19,16 @@ public abstract class CommandFactory implements GameObserver {
     public void updateState(int nextState) {
         WinLog.i(TAG, "updateState: " + nextState);
         switch (nextState) {
-            case GameState.IDLE_STATE:
+            case Freecell.IDLE_STATE:
                 state=idleState;
                 break;
-            case GameState.PLAY_STATE:
+            case Freecell.PLAY_STATE:
                 state=playState;
                 break;
-            case GameState.PAUSE_STATE:
+            case Freecell.PAUSE_STATE:
                 state=pauseState;
                 break;
-            case GameState.END_STATE:
+            case Freecell.END_STATE:
                 state=endState;
                 break;
             default:

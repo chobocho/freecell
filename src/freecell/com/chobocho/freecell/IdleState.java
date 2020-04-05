@@ -5,5 +5,5 @@ public class IdleState extends GameState {
     public IdleState() {
     }
 
-    public int getState() { return IDLE_STATE; }
+    public int getState() { return Freecell.IDLE_STATE; }
 }

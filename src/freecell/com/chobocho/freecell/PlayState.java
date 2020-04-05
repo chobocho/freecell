@@ -222,7 +222,7 @@ public class PlayState extends GameState {
         return result.toString();
     }
 
-    public int getState() { return PLAY_STATE; }
+    public int getState() { return Freecell.PLAY_STATE; }
 
     @Override
     public boolean isPlayState() {
