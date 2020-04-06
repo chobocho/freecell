@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -225,16 +226,16 @@ public class CardgameView extends View implements GameObserver {
     public void updateState(int state) {
         Log.i(LOG_TAG, "STATE: " + state);
         switch (state) {
-            case GameState.IDLE_STATE:
+            case Freecell.IDLE_STATE:
                 drawEngine = idleDrawEngine;
                 break;
-            case GameState.PLAY_STATE:
+            case Freecell.PLAY_STATE:
                 drawEngine = playDrawEngine;
                 break;
-            case GameState.PAUSE_STATE:
+            case Freecell.PAUSE_STATE:
                 drawEngine = pauseDrawEngine;
                 break;
-            case GameState.END_STATE:
+            case Freecell.END_STATE:
                 drawEngine = endDrawEngine;
                 break;
             default:
@@ -276,15 +277,6 @@ public class CardgameView extends View implements GameObserver {
                 int py = (currentMouseY - mouseDy) + i * 60;
                 canvas.drawBitmap(cardImages[hideCard.get(i)], null, new Rect(px, py,  px+width, py+height), paint);
             }
-        }
-
-        int screenW = 1080;
-        int screenH = 1920;
-
-        if (freecell.isPlayState()) {
-            paint.setColor(Color.BLUE);
-            paint.setTextSize(60);
-            canvas.drawText("Move: " + Integer.toString(freecell.getMoveCount()), 50, screenH - 80, paint);
         }
     }
 

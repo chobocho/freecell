@@ -85,7 +85,7 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
     public void addButtons() {
         AndroidLog.i(TAG, "addButtons");
         int screenW = 1080;
-        int screenH = 1920;
+        int screenH = 1920-100;
 
         int x1 = screenW - 400;
         int y1 = screenH - 200;

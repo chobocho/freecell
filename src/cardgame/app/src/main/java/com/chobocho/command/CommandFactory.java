@@ -2,7 +2,7 @@ package com.chobocho.command;
 
 import com.chobocho.cardgame.AndroidLog;
 import com.chobocho.freecell.GameObserver;
-import com.chobocho.freecell.GameState;
+import com.chobocho.freecell.Freecell;
 
 public abstract class CommandFactory implements GameObserver {
     final static String TAG = "CommandFactory";
@@ -19,16 +19,16 @@ public abstract class CommandFactory implements GameObserver {
     public void updateState(int nextState) {
         AndroidLog.i(TAG, "updateState: " + nextState);
         switch (nextState) {
-            case GameState.IDLE_STATE:
+            case Freecell.IDLE_STATE:
                 state=idleState;
                 break;
-            case GameState.PLAY_STATE:
+            case Freecell.PLAY_STATE:
                 state=playState;
                 break;
-            case GameState.PAUSE_STATE:
+            case Freecell.PAUSE_STATE:
                 state=pauseState;
                 break;
-            case GameState.END_STATE:
+            case Freecell.END_STATE:
                 state=endState;
                 break;
             default:

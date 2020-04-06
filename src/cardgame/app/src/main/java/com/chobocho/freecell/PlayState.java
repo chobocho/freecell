@@ -110,7 +110,7 @@ public class PlayState extends GameState {
         return true;
     }
 
-    private boolean isEmptyDeckEnough(int count) {
+    private int getEmpytDeckCount() {
         int result = 0;
 
         for (Deck deck: emptyDeck) {
@@ -124,7 +124,7 @@ public class PlayState extends GameState {
                 result++;
             }
         }
-        return (result >= count);
+        return result;
     }
 
     @Override
@@ -152,8 +152,8 @@ public class PlayState extends GameState {
             return false;
         }
 
-        if (!isEmptyDeckEnough(count)) {
-            CLog.i(TAG, "Empty deck count is smaller than " + count);
+        if (count > getEmpytDeckCount()) {
+            CLog.i(TAG, "Empty deck count is samller than " + count);
             return false;
         }
 
@@ -222,7 +222,7 @@ public class PlayState extends GameState {
         return result.toString();
     }
 
-    public int getState() { return PLAY_STATE; }
+    public int getState() { return Freecell.PLAY_STATE; }
 
     @Override
     public boolean isPlayState() {

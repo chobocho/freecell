@@ -11,6 +11,7 @@ import com.chobocho.freecell.Freecell;
 import java.util.LinkedList;
 
 public class CommonDrawEngineImpl implements DrawEngine {
+
     @Override
     public void onDraw(Canvas g, Freecell game, LinkedList<Integer> hideCard, Bitmap[] cardImages, Bitmap[] buttonImages) {
         onDrawCommon(g, cardImages, buttonImages);
@@ -28,7 +29,7 @@ public class CommonDrawEngineImpl implements DrawEngine {
 
         Paint paint = new Paint();
         paint.setColor(Color.rgb(88, 214, 141));
-        g.drawRect(0, 0, screenW, screenH, paint);
+        g.drawRect(0, 0, g.getWidth(), g.getHeight(), paint);
 
         // Result Deck
         for (int i = 0; i < 4; i++) {

@@ -11,7 +11,7 @@ public class EndState extends GameState {
         resultDeck = new InitDeck();
     }
 
-    public int getState() { return END_STATE; }
+    public int getState() { return Freecell.END_STATE; }
 
     public void pushCard(Card[] cards) {
         resultDeck.clear();

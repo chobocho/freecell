@@ -15,7 +15,7 @@ import java.util.LinkedList;
 public class PlayDrawEngineImpl implements DrawEngine {
     final static String TAG = "PlayDrawEngineImpl";
     int screenW = 1080;
-    int screenH = 1920;
+    int screenH = 1920 - 100;
 
     int CARD_BG_IMAGE = 0;
     int PAUSE_BUTTON = 3;
@@ -42,8 +42,11 @@ public class PlayDrawEngineImpl implements DrawEngine {
 
         int x2 = screenW - 200;
         int y2 = screenH - 200;
-        g.drawBitmap(buttonImages[PAUSE_BUTTON], null, new Rect(x2, y2,  x2+180, y2+180), paint);
+        g.drawBitmap(buttonImages[PAUSE_BUTTON], null, new Rect(x2, y2, x2 + 180, y2 + 180), paint);
 
+        paint.setTextSize(60);
+        paint.setColor(Color.BLUE);
+        g.drawText("Move: " + Integer.toString(game.getMoveCount()), 50, screenH - 80, paint);
     }
 
     private void onDrawBoardDeck(Canvas g, Bitmap[] cardImages, Freecell game, LinkedList<Integer> hideCard) {
