@@ -9,9 +9,10 @@ import com.chobocho.freecell.Freecell;
 import com.chobocho.freecell.FreecellImpl;
 
 public class MainActivity extends AppCompatActivity {
-    Freecell freecell = new FreecellImpl(new AndroidLog());
-    CommandEngine cmdEngine = new CommandEngine(freecell);
+    Freecell freecell;
+    CommandEngine cmdEngine;
     CardgameView gameView;
+    BoardProfile boardProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,7 +22,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void init() {
-        gameView = new CardgameView(this, freecell, cmdEngine);
+        freecell = new FreecellImpl(new AndroidLog());
+        cmdEngine = new CommandEngine(freecell);
+        boardProfile = new BoardProfile();
+        gameView = new CardgameView(this, boardProfile, freecell, cmdEngine);
         freecell.register(gameView);
     }
 }
