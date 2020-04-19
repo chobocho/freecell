@@ -50,6 +50,7 @@ public class CardgameView extends View implements GameObserver {
 
     private Freecell freecell;
     private CommandEngine cmdEngine;
+    private BoardProfile boardProfile;
 
     private DrawEngine drawEngine;
     private DrawEngine idleDrawEngine;
@@ -60,8 +61,8 @@ public class CardgameView extends View implements GameObserver {
     private CommandFactory commandFactory;
     private DeckPositoinManager deckPositoinManager;
 
-    Bitmap[] cardImages   = new Bitmap[55];
-    Bitmap[]  buttonImage = new Bitmap[5];
+    Bitmap[] cardImages;
+    Bitmap[]  buttonImage;
 
     private static final int EMPTY_MESSAGE = 0;
     private HandlerThread playerHandlerThread;
@@ -79,9 +80,10 @@ public class CardgameView extends View implements GameObserver {
     private boolean isMovingCard = false;
     public LinkedList<Integer> hideCard = new LinkedList<Integer>();
 
-    public CardgameView(Context context, Freecell freecell, CommandEngine cmdEngine) {
+    public CardgameView(Context context, BoardProfile boardProfile, Freecell freecell, CommandEngine cmdEngine) {
         super(context);
         this.mContext = context;
+        this.boardProfile = boardProfile;
         this.freecell = freecell;
         this.cmdEngine = cmdEngine;
         isSetScale = false;
@@ -104,80 +106,15 @@ public class CardgameView extends View implements GameObserver {
     }
 
     private void loadImage() {
-        int[] imageName = {
-                R.drawable.bg,
-                R.drawable.ca,
-                R.drawable.c2,
-                R.drawable.c3,
-                R.drawable.c4,
-                R.drawable.c5,
-                R.drawable.c6,
-                R.drawable.c7,
-                R.drawable.c8,
-                R.drawable.c9,
-                R.drawable.c10,
-                R.drawable.cj,
-                R.drawable.cq,
-                R.drawable.ck,
-                R.drawable.da,
-                R.drawable.d2,
-                R.drawable.d3,
-                R.drawable.d4,
-                R.drawable.d5,
-                R.drawable.d6,
-                R.drawable.d7,
-                R.drawable.d8,
-                R.drawable.d9,
-                R.drawable.d10,
-                R.drawable.dj,
-                R.drawable.dq,
-                R.drawable.dk,
-                R.drawable.ha,
-                R.drawable.h2,
-                R.drawable.h3,
-                R.drawable.h4,
-                R.drawable.h5,
-                R.drawable.h6,
-                R.drawable.h7,
-                R.drawable.h8,
-                R.drawable.h9,
-                R.drawable.h10,
-                R.drawable.hj,
-                R.drawable.hq,
-                R.drawable.hk,
-                R.drawable.sa,
-                R.drawable.s2,
-                R.drawable.s3,
-                R.drawable.s4,
-                R.drawable.s5,
-                R.drawable.s6,
-                R.drawable.s7,
-                R.drawable.s8,
-                R.drawable.s9,
-                R.drawable.s10,
-                R.drawable.sj,
-                R.drawable.sq,
-                R.drawable.sk,
-                R.drawable.none,
-                R.drawable.abg
-        };
-
-        for (int i = 0; i < 55; i++) {
-            cardImages[i] = BitmapFactory.decodeResource(mContext.getResources(), imageName[i]);
+        cardImages   = new Bitmap[boardProfile.imageName.length+1];
+        for (int i = 0; i < boardProfile.imageName.length; i++) {
+            cardImages[i] = BitmapFactory.decodeResource(mContext.getResources(), boardProfile.imageName[i]);
         }
 
-        int[] buttonImageName = {
-                R.drawable.newgame,
-                R.drawable.start,
-                R.drawable.resume,
-                R.drawable.pause,
-                R.drawable.revert
-        };
-
-        for (int i = 0; i < 5; i++) {
-            buttonImage[i] = BitmapFactory.decodeResource(mContext.getResources(), buttonImageName[i]);
+        buttonImage = new Bitmap[boardProfile.buttonImageName.length+1];
+        for (int i = 0; i < boardProfile.buttonImageName.length; i++) {
+            buttonImage[i] = BitmapFactory.decodeResource(mContext.getResources(), boardProfile.buttonImageName[i]);
         }
-
     }
 
     private void createPlayerThread() {
