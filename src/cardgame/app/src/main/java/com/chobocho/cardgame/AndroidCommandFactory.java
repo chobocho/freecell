@@ -8,11 +8,11 @@ import com.chobocho.command.CommandFactory;
 
 public class AndroidCommandFactory extends CommandFactory {
 
-    public AndroidCommandFactory() {
-        idleState = new WinIdleCommandFactoryStateImpl();
-        playState = new WinPlayCommandFactoryStateImpl();
-        pauseState = new WinPauseCommandFactoryStateImpl();
-        endState = new WinEndCommandFactoryStateImpl();
+    public AndroidCommandFactory(BoardProfile boardProfile) {
+        idleState = new WinIdleCommandFactoryStateImpl(boardProfile);
+        playState = new WinPlayCommandFactoryStateImpl(boardProfile);
+        pauseState = new WinPauseCommandFactoryStateImpl(boardProfile);
+        endState = new WinEndCommandFactoryStateImpl(boardProfile);
     }
 
 }

@@ -2,6 +2,7 @@ package com.chobocho.cardgame.ui;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
+import com.chobocho.cardgame.BoardProfile;
 import com.chobocho.freecell.Freecell;
 
 import java.util.LinkedList;

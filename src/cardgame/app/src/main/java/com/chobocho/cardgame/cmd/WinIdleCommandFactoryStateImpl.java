@@ -1,10 +1,17 @@
 package com.chobocho.cardgame.cmd;
 
 import com.chobocho.cardgame.AndroidLog;
+import com.chobocho.cardgame.BoardProfile;
 import com.chobocho.command.*;
 
 public class WinIdleCommandFactoryStateImpl extends IdleCommandFactoryStateImpl implements CommandFactoryState {
     final static String TAG = "WinIdleCommandFactoryStateImpl";
+    BoardProfile boardProfile;
+
+    public WinIdleCommandFactoryStateImpl(BoardProfile boardProfile) {
+        super(boardProfile.screenWidth(), boardProfile.screenHeight());
+        this.boardProfile = boardProfile;
+    }
 
     @Override
     public PlayCommand createCommand(int event, int x, int y) {
@@ -38,9 +45,6 @@ public class WinIdleCommandFactoryStateImpl extends IdleCommandFactoryStateImpl 
 
     @Override
     public void addButtons() {
-        int screenW = 1080;
-        int screenH = 1920;
-
         AndroidLog.i(TAG, "addButtons");
         int x1 = (screenW-400)/2;
         int y1 = (screenH-200)/2;

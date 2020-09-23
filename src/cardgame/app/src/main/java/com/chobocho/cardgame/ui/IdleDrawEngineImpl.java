@@ -7,14 +7,31 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 
 import com.chobocho.cardgame.AndroidLog;
+import com.chobocho.cardgame.BoardProfile;
 import com.chobocho.freecell.Freecell;
 import java.util.LinkedList;
 
 public class IdleDrawEngineImpl implements DrawEngine {
     final static String TAG = "IdleDrawEngineImpl";
+
+    int PLAY_GAME_IMAGE = 1;
+
+    BoardProfile boardProfile;
     int screenW = 1080;
     int screenH = 1920;
-    int PLAY_GAME_IMAGE = 1;
+
+    int width = 120;
+    int height = 180;
+    int gap = 10;
+
+    public IdleDrawEngineImpl(BoardProfile boardProfile) {
+        this.boardProfile = boardProfile;
+        screenW = boardProfile.screenWidth();
+        screenH = boardProfile.screenHeight();
+        width = boardProfile.cardWidth();
+        height = boardProfile.cardHeight();
+        gap = boardProfile.cardGap();
+    }
 
     @Override
     public void onDraw(Canvas g, Freecell game, LinkedList<Integer> hideCard, Bitmap[] cardImages, Bitmap[] buttonImages) {

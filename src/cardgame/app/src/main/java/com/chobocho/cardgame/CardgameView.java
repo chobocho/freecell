@@ -90,16 +90,16 @@ public class CardgameView extends View implements GameObserver {
         needScaleCanvas = false;
         loadImage();
 
-        this.idleDrawEngine = new IdleDrawEngineImpl();
-        this.playDrawEngine = new PlayDrawEngineImpl();
-        this.pauseDrawEngine = new PauseDrawEngineImpl();
-        this.endDrawEngine = new EndDrawEngineImpl();
-        this.commonDrawEngine = new CommonDrawEngineImpl();
-        this.deckPositoinManager = new DeckPositoinManagerImpl();
+        this.idleDrawEngine = new IdleDrawEngineImpl(boardProfile);
+        this.playDrawEngine = new PlayDrawEngineImpl(boardProfile);
+        this.pauseDrawEngine = new PauseDrawEngineImpl(boardProfile);
+        this.endDrawEngine = new EndDrawEngineImpl(boardProfile);
+        this.commonDrawEngine = new CommonDrawEngineImpl(boardProfile);
+        this.deckPositoinManager = new DeckPositoinManagerImpl(boardProfile);
 
         drawEngine = this.idleDrawEngine;
 
-        commandFactory = new AndroidCommandFactory();
+        commandFactory = new AndroidCommandFactory(boardProfile);
         this.freecell.register(commandFactory);
 
        //createPlayerThread();
@@ -188,30 +188,16 @@ public class CardgameView extends View implements GameObserver {
 
         Paint paint = new Paint();
 
-        if (!isSetScale) {
-            scaleX = canvas.getWidth() / 1080f;
-            scaleY = canvas.getHeight() / 1920f;
-            isSetScale = true;
-
-            if (scaleX <= 0.999f) {
-                needScaleCanvas = true;
-                Log.d(LOG_TAG, "Resolution of device is smaller than 1080");
-            }
-        }
-
-        if (needScaleCanvas) {
-            canvas.scale(scaleX, scaleY);
-        }
-
         commonDrawEngine.onDraw(canvas, freecell, hideCard, cardImages, buttonImage);
         drawEngine.onDraw(canvas, freecell, hideCard, cardImages, buttonImage);
 
-        int width = 120;
-        int height = 180;
+        int width = boardProfile.cardWidth();
+        int height = boardProfile.cardHeight();
+        int gapH = boardProfile.cardGapH();
         if (isMovingCard) {
             for (int i = 0; i < hideCard.size(); i++) {
                 int px = currentMouseX - mouseDx;
-                int py = (currentMouseY - mouseDy) + i * 60;
+                int py = (currentMouseY - mouseDy) + i * gapH;
                 canvas.drawBitmap(cardImages[hideCard.get(i)], null, new Rect(px, py,  px+width, py+height), paint);
             }
         }
@@ -228,11 +214,6 @@ public class CardgameView extends View implements GameObserver {
 
         int x = (int) (event.getX());
         int y = (int) (event.getY());
-
-        if (needScaleCanvas) {
-            x = (int) (x / scaleX);
-            y = (int) (y / scaleY);
-        }
 
         Log.d(LOG_TAG, ">> X: " + x + " Y: " + y);
 

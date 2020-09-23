@@ -6,6 +6,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 
 import com.chobocho.card.Card;
+import com.chobocho.cardgame.BoardProfile;
 import com.chobocho.deck.Deck;
 import com.chobocho.deck.PlayDeck;
 import com.chobocho.freecell.Freecell;
@@ -15,21 +16,28 @@ import java.util.LinkedList;
 public class EndDrawEngineImpl implements DrawEngine {
     final static String TAG = "EndDrawEngineImpl";
 
-    int screenW = 1080;
-    int screenH = 1920;
-
     int NEW_GAME_IMAGE = 0;
     int CARD_BG_IMAGE = 0;
     int CARD_NONE_IMAGE = 53;
     int CARD_ABG_IMAGE = 54;
 
-    int width = 120;
-    int height = 180;
-    int cardCap = 30;
     Paint paint = new Paint();
 
-    public EndDrawEngineImpl() {
+    BoardProfile boardProfile;
+    int screenW = 1080;
+    int screenH = 1920;
 
+    int width = 120;
+    int height = 180;
+    int gap = 10;
+
+    public EndDrawEngineImpl(BoardProfile boardProfile) {
+        this.boardProfile = boardProfile;
+        screenW = boardProfile.screenWidth();
+        screenH = boardProfile.screenHeight();
+        width = boardProfile.cardWidth();
+        height = boardProfile.cardHeight();
+        gap = boardProfile.cardGap();
     }
 
     @Override
@@ -50,7 +58,7 @@ public class EndDrawEngineImpl implements DrawEngine {
                     continue;
                 }
                 int imgNumber = (card.getFigure().getValue() - 1) * 13 + card.getNumber().getValue();
-                int x1 = 10 + width * i + 10 * i;
+                int x1 = gap + width * i + gap * i;
                 int y1 = 10;
                 g.drawBitmap(cardImages[imgNumber], null, new Rect(x1, y1,  x1+width, y1+height), paint);
             }

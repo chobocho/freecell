@@ -4,7 +4,11 @@ import java.util.LinkedList;
 
 public class IdleCommandFactoryStateImpl implements CommandFactoryState {
     protected LinkedList<ButtonPosition> buttons = new LinkedList<ButtonPosition>();
-    public IdleCommandFactoryStateImpl() {
+    protected int screenW;
+    protected int screenH;
+    public IdleCommandFactoryStateImpl(int w, int h) {
+        screenW = w;
+        screenH = h;
         addButtons();
     }
 

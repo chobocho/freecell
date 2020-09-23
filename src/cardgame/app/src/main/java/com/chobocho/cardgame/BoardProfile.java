@@ -1,6 +1,56 @@
 package com.chobocho.cardgame;
 
+import android.util.Log;
+
 public class BoardProfile {
+    final static public String TAG = "BoardProfile";
+
+    public static int screenW = 1080;
+    public static int screenH = 1820;
+    public static int cardW = 120;
+    public static int cardH = 180;
+    public static int cardG = 10;
+    public static int cardGapHeight = 10;
+
+    public BoardProfile(int w, int h) {
+        setScreenSize(w, h);
+    }
+
+    public int screenWidth() {
+        return this.screenW;
+    }
+
+    public int screenHeight() {
+        return this.screenH;
+    }
+
+    public int cardWidth() {
+        return this.cardW;
+    }
+
+    public int cardHeight() {
+        return this.cardH;
+    }
+
+    public int cardGap() {
+        return this.cardG;
+    }
+
+    public int cardGapH() {
+        return this.cardGapHeight;
+    }
+
+    public void setScreenSize(int w, int h) {
+        this.screenW = w;
+        this.screenH = h;
+        Log.d(TAG, "W: " + w + ",H: " + h);
+
+        this.cardW = w/9;
+        this.cardH = (int) (this.cardW * 1.5);
+        this.cardG = w/81;
+        this.cardGapHeight = (int)(this.cardH * 0.3);
+    }
+
     public static int[] imageName = {
             R.drawable.bg,
             R.drawable.ca,

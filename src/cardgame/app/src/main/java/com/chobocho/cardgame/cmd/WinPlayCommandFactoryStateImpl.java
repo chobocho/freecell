@@ -1,13 +1,22 @@
 package com.chobocho.cardgame.cmd;
 
 import com.chobocho.cardgame.AndroidLog;
+import com.chobocho.cardgame.BoardProfile;
 import com.chobocho.command.*;
 import com.chobocho.freecell.Freecell;
 
 public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl implements CommandFactoryState {
     final static String TAG = "WinPlayCommandFactoryStateImpl";
+    BoardProfile boardProfile;
     int width = 100;
-    int heigth = 150;
+    int height = 150;
+
+    public WinPlayCommandFactoryStateImpl(BoardProfile boardProfile) {
+        super(boardProfile.screenWidth(), boardProfile.screenHeight());
+        this.boardProfile = boardProfile;
+        this.width = boardProfile.cardWidth();
+        this.height = boardProfile.cardHeight();
+    }
 
     @Override
     public PlayCommand createCommand(int fromDeck, int fromPos, int toDeck, int toPos) {
@@ -84,8 +93,6 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
 	@Override
     public void addButtons() {
         AndroidLog.i(TAG, "addButtons");
-        int screenW = 1080;
-        int screenH = 1920-100;
 
         int x1 = screenW - 400;
         int y1 = screenH - 200;

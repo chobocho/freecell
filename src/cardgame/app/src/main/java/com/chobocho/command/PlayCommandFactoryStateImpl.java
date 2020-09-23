@@ -5,7 +5,12 @@ import java.util.LinkedList;
 public class PlayCommandFactoryStateImpl implements CommandFactoryState {
     protected LinkedList<ButtonPosition> buttons = new LinkedList<ButtonPosition>();
 
-    public PlayCommandFactoryStateImpl() {
+    protected int screenW;
+    protected int screenH;
+
+    public PlayCommandFactoryStateImpl(int w, int h) {
+        screenW = w;
+        screenH = h;
         addButtons();
     }
 
