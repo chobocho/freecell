@@ -23,6 +23,7 @@ public class IdleDrawEngineImpl implements DrawEngine {
     int width = 120;
     int height = 180;
     int gap = 10;
+    int cardGapH = 10;
 
     public IdleDrawEngineImpl(BoardProfile boardProfile) {
         this.boardProfile = boardProfile;
@@ -31,6 +32,7 @@ public class IdleDrawEngineImpl implements DrawEngine {
         width = boardProfile.cardWidth();
         height = boardProfile.cardHeight();
         gap = boardProfile.cardGap();
+        cardGapH = boardProfile.cardGapH();
     }
 
     @Override
@@ -41,9 +43,9 @@ public class IdleDrawEngineImpl implements DrawEngine {
         g.drawBitmap(buttonImages[PLAY_GAME_IMAGE], null, new Rect( x1,  y1, x1+400, y1+200), paint);
         AndroidLog.i(TAG, "Event:" + Integer.toString(x1) + " : " + Integer.toString(y1));
 
-        paint.setTextSize(12);
+        paint.setTextSize(cardGapH);
         paint.setColor(Color.BLUE);
-        g.drawText("Version: " + Freecell.Version, 50, screenH - 180, paint);
+        g.drawText("Version: " + Freecell.Version, gap, screenH - cardGapH, paint);
     }
 
 }
