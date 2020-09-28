@@ -388,16 +388,16 @@ public class CardgameView extends View implements GameObserver {
 
     private void loadHIghScore() {
         Log.d(LOG_TAG, "load()");
-        SharedPreferences pref = mContext.getSharedPreferences("choboTetris", MODE_PRIVATE);
+        SharedPreferences pref = mContext.getSharedPreferences("freecell", MODE_PRIVATE);
         this.highScore = pref.getInt("highscore", 0);
     }
 
     private void saveScore() {
-        //Log.d(LOG_TAG, "saveScore()");
+        Log.d(LOG_TAG, "saveScore()");
         //if (this.highScore > player.getHighScore()) {
         //    return;
         //}
-        //SharedPreferences pref = mContext.getSharedPreferences("choboTetris", MODE_PRIVATE);
+        //SharedPreferences pref = mContext.getSharedPreferences("freecell", MODE_PRIVATE);
         //SharedPreferences.Editor edit = pref.edit();
 
         //edit.putInt("highscore", player.getHighScore());

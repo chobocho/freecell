@@ -11,8 +11,10 @@ public class BoardProfile {
     public static int cardH = 180;
     public static int cardG = 10;
     public static int cardGapHeight = 10;
+    String version ="";
 
-    public BoardProfile(int w, int h) {
+    public BoardProfile(String version, int w, int h) {
+        this.version = version;
         setScreenSize(w, h);
     }
 
