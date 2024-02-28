@@ -6,7 +6,7 @@ import com.chobocho.deck.Deck;
  * 
  */
 public interface Freecell {
-    String Version = "0.1105.TD2";
+    String Version = "0.1216.WB1";
     int NONE_STATE = -1;
     int IDLE_STATE = 0;
     int PLAY_STATE = 1;

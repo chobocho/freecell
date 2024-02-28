@@ -34,10 +34,7 @@ public class FreecellImpl implements Freecell {
 
     @Override
     public boolean isMovableDeck(int deck) {
-        if (deck < Freecell.RESULT_DECK_1 || deck > Freecell.RESULT_DECK_4) {
-            return true;
-        }
-        return false;
+        return deck < Freecell.RESULT_DECK_1 || deck > Freecell.RESULT_DECK_4;
     }
 
     public void notifyToOberver() {

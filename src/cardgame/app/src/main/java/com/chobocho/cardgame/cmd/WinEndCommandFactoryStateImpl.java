@@ -17,9 +17,8 @@ public class WinEndCommandFactoryStateImpl extends EndCommandFactoryStateImpl im
     public PlayCommand createCommand(int event, int x, int y) {
         AndroidLog.i(TAG, "Event:" + Integer.toString(event));
         if (event == CommandFactory.KEYPRESS_EVENT) {
-            switch (x) {
-                case 83:
-                    return new PlayCommand(PlayCommand.PLAY, 0, 0);
+            if (x == 83) {
+                return new PlayCommand(PlayCommand.PLAY, 0, 0);
             }
         } else if (event == CommandFactory.MOUSE_CLICK_EVENT) {
             for (ButtonPosition btn : buttons) {

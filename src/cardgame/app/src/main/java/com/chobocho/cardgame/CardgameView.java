@@ -251,7 +251,7 @@ public class CardgameView extends View implements GameObserver {
             isMovingCard = true;
             mouseDx = mouseX - StartPos.x1;
             mouseDy = mouseY - StartPos.y1;
-            Log.i(LOG_TAG, "StartDeck :" + StartPos.toString());
+            Log.i(LOG_TAG, "StartDeck :" + StartPos);
         }
     }
 

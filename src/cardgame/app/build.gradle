@@ -10,7 +10,7 @@ android {
     if (versionPropsFile.canRead()) {
         versionInfo.load(new FileInputStream(versionPropsFile))
     } else {
-        versionInfo['VERSION_HEADER'] = "0.1105"
+        versionInfo['VERSION_HEADER'] = "0.1216"
         versionInfo['VERSION_CODE'] = 0
         versionInfo['MONTHLY_RELEASE_COUNT'] = 0
         versionInfo['BUILD_COUNT'] = 0
@@ -41,7 +41,7 @@ android {
 
     versionInfo.store(versionPropsFile.newWriter(), null)
 
-    def date = new Date();
+    def date = new Date()
     def alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     def thisYear =  alphabet.charAt(date.getYear() + 1900 - 2001)
     def thisMonth = alphabet.charAt(date.getMonth())
