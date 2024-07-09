@@ -6,12 +6,12 @@ import com.chobocho.command.DeckPositionManager;
 import com.chobocho.deck.Deck;
 import com.chobocho.freecell.Freecell;
 
-public class DeckPositoinManagerImpl extends DeckPositionManager {
-    final public static String TAG = "DeckPositoinManagerImpl";
+public class DeckPositionManagerImpl extends DeckPositionManager {
+    final public static String TAG = "DeckPositionManagerImpl";
     int width = 100;
     int height = 150;
 
-    public DeckPositoinManagerImpl() {
+    public DeckPositionManagerImpl() {
         super();
         init();
     }

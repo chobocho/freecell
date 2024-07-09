@@ -3,7 +3,7 @@ package game;
 import com.chobocho.card.Card;
 import com.chobocho.command.*;
 import com.chobocho.freecell.Freecell;
-import game.cmd.DeckPositoinManagerImpl;
+import game.cmd.DeckPositionManagerImpl;
 import game.ui.*;
 
 import java.awt.*;
@@ -24,7 +24,7 @@ public class CardGameGui extends JPanel{
     private DrawEngineManager drawEngineManager;
     private CommandEngine cmdEngine;
     private CommandFactory commandFactory;
-    private DeckPositionManager deckPositoinManager;
+    private DeckPositionManager deckPositionManager;
 
 
     public final static int CARD_BG_IMAGE = 0;
@@ -39,7 +39,7 @@ public class CardGameGui extends JPanel{
         this.freecell = freecell;
         this.cmdEngine = cmdEngine;
         drawEngineManager = new DrawEngineManagerImpl(freecell, boardProfile, this);
-        this.deckPositoinManager = new DeckPositoinManagerImpl();
+        this.deckPositionManager = new DeckPositionManagerImpl();
         commandFactory = new WindowCommandFactory();
         this.freecell.register(commandFactory);
 
@@ -198,7 +198,7 @@ public class CardGameGui extends JPanel{
         public void mouseClicked(MouseEvent e) {
             WinLog.i(TAG, "Mouse Clicked " + e.getX() + ":" + e.getY());
 
-            deckPositoinManager.initCardPosition(freecell);
+            deckPositionManager.initCardPosition(freecell);
 
             int mx = e.getX();
             int my = e.getY();
@@ -209,7 +209,7 @@ public class CardGameGui extends JPanel{
                 return;
             }
 
-            CardPosition pos = deckPositoinManager.getCardInfo(mx, my);
+            CardPosition pos = deckPositionManager.getCardInfo(mx, my);
 
             if (pos == null || !freecell.isMovableDeck(pos.deck)) {
                 return;
@@ -265,9 +265,9 @@ public class CardGameGui extends JPanel{
             mouseDx = 0;
             mouseDy = 0;
 
-            deckPositoinManager.initCardPosition(freecell);
+            deckPositionManager.initCardPosition(freecell);
 
-            StartPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+            StartPos = deckPositionManager.getCardInfo(mouseX, mouseY);
 
             if (StartPos != null) {
                 if (!freecell.isMovableDeck(StartPos.deck)) {
@@ -338,21 +338,21 @@ public class CardGameGui extends JPanel{
             hideCard.clear();
 
             // Check left top of moving card
-            EndPos = deckPositoinManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
+            EndPos = deckPositionManager.getCardInfo(mouseX - mouseDx, mouseY - mouseDy);
 
             if (runCommand(EndPos)) {
                 return;
             }
 
             // Check the mouse X,Y
-            EndPos = deckPositoinManager.getCardInfo(mouseX, mouseY);
+            EndPos = deckPositionManager.getCardInfo(mouseX, mouseY);
 
             if (runCommand(EndPos)) {
                 return;
             }
 
             // Check Right top of moving card
-            EndPos = deckPositoinManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
+            EndPos = deckPositionManager.getCardInfo(mouseX + (100 - mouseDx), mouseY - mouseDy);
 
             if (runCommand(EndPos)) {
                 return;

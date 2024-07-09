@@ -110,7 +110,7 @@ public class PlayState extends GameState {
         return true;
     }
 
-    private int getEmpytDeckCount() {
+    private int getEmptyDeckCount() {
         int result = 0;
 
         for (Deck deck: emptyDeck) {
@@ -152,8 +152,8 @@ public class PlayState extends GameState {
             return false;
         }
 
-        if (count > getEmpytDeckCount()) {
-            CLog.i(TAG, "Empty deck count is samller than " + count);
+        if (count > getEmptyDeckCount()) {
+            CLog.i(TAG, "Empty deck count is smaller than " + count);
             return false;
         }
 
@@ -183,7 +183,7 @@ public class PlayState extends GameState {
         return false;
     }
 
-    private void moveCardFroced(int from, int to, int count) {
+    private void moveCardForced(int from, int to, int count) {
         Deck tmpDec = new PlayDeck();
 
         for (int i = 0; i < count; i++) {
@@ -217,7 +217,7 @@ public class PlayState extends GameState {
 
         result.append("History: \n");
         for(int i = 0; i < history.size(); i++) {
-            result.append(history.get(i).toStinrg() + "\n");
+            result.append(history.get(i).toString() + "\n");
         }
         return result.toString();
     }
@@ -245,7 +245,7 @@ public class PlayState extends GameState {
             return false;
         }
         MoveCommand cmd = history.pop();
-        moveCardFroced(cmd.to, cmd.from, cmd.count);
+        moveCardForced(cmd.to, cmd.from, cmd.count);
         moveCount++;
         return true;
     }

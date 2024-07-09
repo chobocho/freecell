@@ -51,9 +51,9 @@ public class PlayStateTest {
         System.out.println(playState);
 
         // Result Deck check
-        Card carda = new Card(Card.FIGURE.SPADE,Card.NUMBER.ACE);
-        assertEquals(carda.open(), true);
-        assertEquals(playState.getDeck(Freecell.RESULT_DECK_1).push(carda), true);
+        Card card = new Card(Card.FIGURE.SPADE,Card.NUMBER.ACE);
+        assertEquals(card.open(), true);
+        assertEquals(playState.getDeck(Freecell.RESULT_DECK_1).push(card), true);
         Card card5 = new Card(Card.FIGURE.SPADE,Card.NUMBER.THREE);
         assertEquals(card5.open(), true);
         assertEquals(playState.getDeck(Freecell.RESULT_DECK_1).push(card5), false);
@@ -63,8 +63,8 @@ public class PlayStateTest {
     public void testHistory() {
         System.out.println("testHistory");
         playState.initGame();
-        String orignal = playState.toString();
-        System.out.println(orignal);
+        String orginal = playState.toString();
+        System.out.println(orginal);
         playState.moveCard(Freecell.BOARD_DECK_1, Freecell.EMPTY_DECK_1,1);
         playState.moveCard(Freecell.BOARD_DECK_1, Freecell.EMPTY_DECK_2,1);
         String afterMove = playState.toString();
@@ -74,6 +74,6 @@ public class PlayStateTest {
         playState.revert();
         String afterBack = playState.toString();
         System.out.println(afterBack);
-        assertEquals(orignal, afterBack);
+        assertEquals(orginal, afterBack);
     }
 }

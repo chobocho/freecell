@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class FreecellImpl implements Freecell {
     private static final String TAG = "SolitareImpl";
-    private static final String Version = "0.1105.TC2";
+    private static final String Version = "0.1216.TC2";
     GameState state;
     IdleState idleState;
     PlayState playState;
@@ -41,7 +41,7 @@ public class FreecellImpl implements Freecell {
         return false;
     }
 
-    public void notifyToOberver() {
+    public void notifyToObserver() {
         for (GameObserver observer: observers) {
             observer.updateState(state.getState());
         }
@@ -105,7 +105,7 @@ public class FreecellImpl implements Freecell {
             default:
                 break;
         }
-        notifyToOberver();
+        notifyToObserver();
         return true;
     }
 

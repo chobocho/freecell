@@ -15,7 +15,7 @@ public class MoveCommand {
         this.count = count;
     }
 
-    public String toStinrg() {
+    public String toString() {
         return "F: " + from + " T:" + to + " C:" + count;
     }
 }

@@ -4,12 +4,10 @@ import com.chobocho.command.*;
 import com.chobocho.freecell.Freecell;
 import game.WinLog;
 
-import java.awt.event.KeyEvent;
-
 public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl implements CommandFactoryState {
     final static String TAG = "WinPlayCommandFactoryStateImpl";
     int width = 100;
-    int heigth = 150;
+    int height = 150;
 
     @Override
     public PlayCommand createCommand(int fromDeck, int fromPos, int toDeck, int toPos) {

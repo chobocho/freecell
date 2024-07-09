@@ -29,10 +29,7 @@ abstract public class Deck {
     }
 
     public Card get(int n) {
-        if (deck.isEmpty()) {
-            return null;
-        }
-        return deck.get(n);
+        return (deck.isEmpty()) ? null : deck.get(n);
     }
 
     public void clear() {

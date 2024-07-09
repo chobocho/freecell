@@ -17,10 +17,6 @@ public class BoardDeck extends Deck {
         this.deck.clear();
     }
 
-    public void clear() {
-        this.deck.clear();
-    }
-
     public boolean push(Card card) {
         if (!IsAcceptable(card)) {
             CLog.i(TAG, "Not Acceptable!");
@@ -38,22 +34,8 @@ public class BoardDeck extends Deck {
         return card;
     }
 
-    public Card top() {
-        return deck.peek();
-    }
-
-    public Card get(int n) {
-        if(deck.isEmpty()) {
-            return null;
-        }
-        return deck.get(n);
-    }
-
     public boolean openTopCard() {
-        if (deck.isEmpty()) {
-            return false;
-        }
-        return deck.get(0).open();
+        return deck.isEmpty() ? false : deck.get(0).open();
     }
 
     public void openAll() {
@@ -63,30 +45,7 @@ public class BoardDeck extends Deck {
     }
 
     public boolean IsAcceptable(Card newCard) {
-        Card card = null;
-        if (!deck.isEmpty()) {
-            card = this.deck.peek();
-        } else {
-            card = new Card(Card.FIGURE.NONE, Card.NUMBER.NONE);
-        }
+        Card card = deck.isEmpty() ? new Card(Card.FIGURE.NONE, Card.NUMBER.NONE) : this.deck.peek();
         return checkMethod.IsAcceptable(card, newCard);
-    }
-
-    public void setCheckMethod(CardCheckMethod method) {
-        this.checkMethod = checkMethod;
-    }
-
-    public String toString() {
-        StringBuffer result = new StringBuffer();
-
-        for(Card card : deck) {
-            result.append(card + " ");
-        }
-
-        return result.toString();
-    }
-
-    public int size() {
-        return this.deck.size();
     }
 }
