@@ -24,7 +24,7 @@ public class CardGameGui extends JPanel{
     private DrawEngineManager drawEngineManager;
     private CommandEngine cmdEngine;
     private CommandFactory commandFactory;
-    private DeckPositoinManager deckPositoinManager;
+    private DeckPositionManager deckPositoinManager;
 
 
     public final static int CARD_BG_IMAGE = 0;
@@ -33,7 +33,7 @@ public class CardGameGui extends JPanel{
 
     final public static int NEW_GAME_IMAGE = 0;
     final public static int PLAY_GAME_IMAGE = 1;
-    final public static int RESME_GAME_IMAGE = 2;
+    final public static int RESUME_GAME_IMAGE = 2;
 
     public CardGameGui(CardGameMain parent, Freecell freecell, BoardProfile boardProfile, CommandEngine cmdEngine) {
         this.freecell = freecell;

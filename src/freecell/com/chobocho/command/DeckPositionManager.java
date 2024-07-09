@@ -4,11 +4,11 @@ import com.chobocho.freecell.Freecell;
 
 import java.util.LinkedList;
 
-public class DeckPositoinManager {
+public class DeckPositionManager {
     protected  LinkedList<CardPosition> deckList;
     protected  LinkedList<CardPosition> boardCards;
 
-    public DeckPositoinManager() {
+    public DeckPositionManager() {
         deckList = new LinkedList<CardPosition>();
         boardCards = new LinkedList<CardPosition>();
     }

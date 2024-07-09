@@ -8,13 +8,13 @@ import java.util.HashMap;
 public class CommandEngine {
     final static String TAG = "CommandEngine";
     Freecell game;
-    HashMap<String, ComandFunction> functionMap;
+    HashMap<String, CommandFunction> functionMap;
     boolean isRunning;
 
     public CommandEngine(Freecell freecell) {
         isRunning = false;
         this.game = freecell;
-        this.functionMap = new HashMap<String, ComandFunction>();
+        this.functionMap = new HashMap<String, CommandFunction>();
         initFunction();
     }
 

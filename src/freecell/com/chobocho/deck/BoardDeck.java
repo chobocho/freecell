@@ -72,7 +72,7 @@ public class BoardDeck extends Deck {
         return checkMethod.IsAcceptable(card, newCard);
     }
 
-    public void setCheckMethod(CardCheckMethod methd) {
+    public void setCheckMethod(CardCheckMethod method) {
         this.checkMethod = checkMethod;
     }
 

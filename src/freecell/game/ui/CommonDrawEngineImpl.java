@@ -31,7 +31,7 @@ public class CommonDrawEngineImpl implements DrawEngine {
         g.drawImage(cardImages[CARD_A_BG_IMAGE], 20+width, 10, null);
         g.drawImage(cardImages[CARD_A_BG_IMAGE], 30+width*2, 10, null);
         g.drawImage(cardImages[CARD_A_BG_IMAGE], 40+width*3, 10, null);
-        // Empyt Deck
+        // Empty Deck
         g.drawImage(cardImages[CARD_BG_IMAGE], 50+width*4, 10, null);
         g.drawImage(cardImages[CARD_BG_IMAGE], 60+width*5, 10, null);
         g.drawImage(cardImages[CARD_BG_IMAGE], 70+width*6, 10, null);

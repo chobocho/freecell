@@ -36,7 +36,7 @@ public class Card {
         SIX(6),
         SEVEN(7),
         EIGHT(8),
-        NIEN(9),
+        NINE(9),
         TEN(10),
         JACK(11),
         QUEEN(12),
@@ -64,26 +64,21 @@ public class Card {
     }
 
     private void setColor() {
-        if ((this.figure == FIGURE.SPADE)||(this.figure == FIGURE.CLOVER)) {
-            this.color = COLOR.BLACK;
-        } else {
-            this.color = COLOR.RED;
-        }
+        this.color = ((this.figure == FIGURE.SPADE)||(this.figure == FIGURE.CLOVER))? COLOR.BLACK : COLOR.RED;
     }
 
     private boolean isOpenState;
     private COLOR color;
-    private NUMBER number;
-    private FIGURE figure;
+    private final NUMBER number;
+    private final FIGURE figure;
 
     public boolean open() {
        isOpenState = true;
        return true;
     }
 
-    public boolean close() {
+    public void close() {
         isOpenState = false;
-        return true;
     }
 
     public boolean isOpen() {

@@ -20,7 +20,7 @@ public class PauseDrawEngineImpl extends DrawEngineImpl implements DrawEngine {
 
     @Override
     public void onDraw(Graphics g, Freecell game, BoardProfile boardProfile, LinkedList<Integer> hideCard, BufferedImage[] cardImages, BufferedImage[] buttonImages) {
-        g.drawImage(buttonImages[CardGameGui.RESME_GAME_IMAGE], (screenW-200)/2, 250, null);
+        g.drawImage(buttonImages[CardGameGui.RESUME_GAME_IMAGE], (screenW-200)/2, 250, null);
         g.drawImage(buttonImages[CardGameGui.NEW_GAME_IMAGE], (screenW-200)/2, 450, null);
     }
 }

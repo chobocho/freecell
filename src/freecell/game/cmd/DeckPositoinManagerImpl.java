@@ -2,11 +2,11 @@ package game.cmd;
 
 import com.chobocho.card.Card;
 import com.chobocho.command.CardPosition;
-import com.chobocho.command.DeckPositoinManager;
+import com.chobocho.command.DeckPositionManager;
 import com.chobocho.deck.Deck;
 import com.chobocho.freecell.Freecell;
 
-public class DeckPositoinManagerImpl extends DeckPositoinManager {
+public class DeckPositoinManagerImpl extends DeckPositionManager {
     final public static String TAG = "DeckPositoinManagerImpl";
     int width = 100;
     int height = 150;
