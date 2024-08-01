@@ -1,4 +1,4 @@
-package test.com.chobocho.command;
+package command;
 
 import com.chobocho.command.CardPosition;
 import org.junit.After;

@@ -1,4 +1,4 @@
-package test.com.chobocho.deck;
+package deck;
 
 import com.chobocho.card.Card;
 import com.chobocho.deck.Deck;

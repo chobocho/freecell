@@ -1,4 +1,4 @@
-package com.chobocho.util;
+package util;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package test.com.chobocho.card;
+package card;
 
 import com.chobocho.card.Card;
 import org.junit.Test;

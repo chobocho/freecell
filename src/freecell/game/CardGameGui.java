@@ -191,7 +191,7 @@ public class CardGameGui extends JPanel{
         public int mouseDy;
 
         private boolean isMovingCard = false;
-        public LinkedList<Integer> hideCard = new LinkedList<Integer>();
+        public LinkedList<Integer> hideCard = new LinkedList<>();
         private int mouseX;
         private int mouseY;
 

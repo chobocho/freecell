@@ -1,11 +1,9 @@
 package com.chobocho.command;
 
-import game.WinLog;
-
 import java.util.LinkedList;
 
 public class PauseCommandFactoryStateImpl implements CommandFactoryState {
-    protected LinkedList<ButtonPosition> buttons = new LinkedList<ButtonPosition>();
+    protected LinkedList<ButtonPosition> buttons = new LinkedList<>();
 
     public PauseCommandFactoryStateImpl() {
         addButtons();

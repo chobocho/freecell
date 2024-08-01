@@ -29,7 +29,7 @@ public class EndDrawEngineImpl extends DrawEngineImpl implements DrawEngine {
 
     private void onDrawResultDeck(Graphics g, BufferedImage[] cardImages, Freecell game) {
         //WinLog.i(TAG, "onDrawResultDeck");
-        Deck deck = new PlayDeck();
+        Deck deck;
 
         for (int i = 0; i < 4; i++) {
             deck = game.getDeck(0);

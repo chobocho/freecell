@@ -1,6 +1,5 @@
-package test.com.chobocho.deck;
+package deck;
 
-import com.chobocho.card.Card;
 import com.chobocho.deck.BoardDeck;
 import com.chobocho.deck.Deck;
 import com.chobocho.deck.ResultDeckCheckMethod;

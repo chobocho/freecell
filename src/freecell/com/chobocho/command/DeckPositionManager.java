@@ -9,8 +9,8 @@ public class DeckPositionManager {
     protected  LinkedList<CardPosition> boardCards;
 
     public DeckPositionManager() {
-        deckList = new LinkedList<CardPosition>();
-        boardCards = new LinkedList<CardPosition>();
+        deckList = new LinkedList<>();
+        boardCards = new LinkedList<>();
     }
 
     public void addDeckPosition(CardPosition deck) {
@@ -56,14 +56,14 @@ public class DeckPositionManager {
     }
 
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
 
-        for(int i = 0; i < deckList.size(); i++) {
-            result.append(deckList.get(i).toString() + "\n");
+        for (CardPosition cardPosition : deckList) {
+            result.append(cardPosition.toString() + "\n");
         }
 
-        for(int i = 0; i < boardCards.size(); i++) {
-            result.append(boardCards.get(i).toString() + "\n");
+        for (CardPosition boardCard : boardCards) {
+            result.append(boardCard.toString() + "\n");
         }
         return result.toString();
     }

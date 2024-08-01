@@ -3,7 +3,7 @@ package com.chobocho.command;
 import java.util.LinkedList;
 
 public class IdleCommandFactoryStateImpl implements CommandFactoryState {
-    protected LinkedList<ButtonPosition> buttons = new LinkedList<ButtonPosition>();
+    protected LinkedList<ButtonPosition> buttons = new LinkedList<>();
     public IdleCommandFactoryStateImpl() {
         addButtons();
     }

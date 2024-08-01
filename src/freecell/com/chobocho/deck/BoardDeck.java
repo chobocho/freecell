@@ -9,7 +9,7 @@ public class BoardDeck extends Deck {
     final static String TAG = "BoardDeck";
 
     public BoardDeck(CardCheckMethod checkMethod) {
-        this.deck = new LinkedList<Card>();
+        this.deck = new LinkedList<>();
         this.checkMethod = checkMethod;
     }
 
@@ -39,8 +39,8 @@ public class BoardDeck extends Deck {
     }
 
     public void openAll() {
-        for (int i = 0; i < deck.size(); i++) {
-            deck.get(i).open();
+        for (Card card : deck) {
+            card.open();
         }
     }
 

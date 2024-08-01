@@ -27,8 +27,8 @@ public class PlayDeck extends Deck {
     }
 
     public void openAll() {
-        for (int i = 0; i < deck.size(); i++) {
-            deck.get(i).open();
+        for (Card card : deck) {
+            card.open();
         }
     }
 }

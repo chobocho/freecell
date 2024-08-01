@@ -25,8 +25,8 @@ public class PlayState extends GameState {
     }
 
     private void initVars() {
-        history = new LinkedList<MoveCommand>();
-        deckList = new ArrayList<Deck>();
+        history = new LinkedList<>();
+        deckList = new ArrayList<>();
         initDeck = new InitDeck();
 
         ResultDeckCheckMethod resultDeckCheckMethod = new ResultDeckCheckMethod();
@@ -129,7 +129,7 @@ public class PlayState extends GameState {
 
     @Override
     public boolean moveCard(int from, int to, int count) {
-        boolean result = false;
+        boolean result;
 
         if (from >= Freecell.RESULT_DECK_1 && from <= Freecell.RESULT_DECK_4) {
             return false;
@@ -209,15 +209,15 @@ public class PlayState extends GameState {
     }
 
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
 
         for(int i = 0; i < deckList.size(); i++) {
             result.append(i + " size " + deckList.get(i).size() + ": " + deckList.get(i) + "\n");
         }
 
         result.append("History: \n");
-        for(int i = 0; i < history.size(); i++) {
-            result.append(history.get(i).toString() + "\n");
+        for (MoveCommand moveCommand : history) {
+            result.append(moveCommand.toString() + "\n");
         }
         return result.toString();
     }

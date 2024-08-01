@@ -14,7 +14,7 @@ public class CommandEngine {
     public CommandEngine(Freecell freecell) {
         isRunning = false;
         this.game = freecell;
-        this.functionMap = new HashMap<String, CommandFunction>();
+        this.functionMap = new HashMap<>();
         initFunction();
     }
 

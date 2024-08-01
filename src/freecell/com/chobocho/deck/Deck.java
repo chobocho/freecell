@@ -9,7 +9,7 @@ abstract public class Deck {
     protected LinkedList<Card> deck;
 
     public Deck() {
-        this.deck = new LinkedList<Card>();
+        this.deck = new LinkedList<>();
     }
 
     public void setCheckMethod(CardCheckMethod method) {
@@ -48,7 +48,7 @@ abstract public class Deck {
     }
 
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
 
         for (Card card : deck) {
             result.append(card + " ");

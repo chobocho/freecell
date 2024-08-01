@@ -15,10 +15,8 @@ public class WinPlayCommandFactoryStateImpl extends PlayCommandFactoryStateImpl 
             //return new PlayCommand(PlayCommand.OPEN, fromDeck, fromDeck);
             return null;
         }
-        else {
-            int count = fromPos+1;
-            return new PlayCommand(PlayCommand.MOVE, fromDeck, toDeck, count);
-        }
+        int count = fromPos+1;
+        return new PlayCommand(PlayCommand.MOVE, fromDeck, toDeck, count);
     }
 
     @Override

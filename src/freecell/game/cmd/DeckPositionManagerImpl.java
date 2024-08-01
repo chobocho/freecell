@@ -62,7 +62,6 @@ public class DeckPositionManagerImpl extends DeckPositionManager {
                     // WinLog.i(TAG,  pos.toString());
                     addCardPosition(pos);
                 } else {
-                    pos = new CardPosition(deckNumber, j, 10 + (width + 10) * i, 20 + height + cap, (width + 10) * (i + 1), 20 + height*2 + cap);
                     cap += cardCap;
                 }
             }
