@@ -1,8 +1,9 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdk 34
-    buildToolsVersion '34.0.0'
+    namespace "com.chobocho.cardgame"
+    compileSdk 36
+    buildToolsVersion "36.0.0"
 
     def versionPropsFile = file('versioninfo.properties')
     def Properties versionInfo = new Properties()
@@ -10,7 +11,7 @@ android {
     if (versionPropsFile.canRead()) {
         versionInfo.load(new FileInputStream(versionPropsFile))
     } else {
-        versionInfo['VERSION_HEADER'] = "0.1216"
+        versionInfo['VERSION_HEADER'] = "0.1105"
         versionInfo['VERSION_CODE'] = 0
         versionInfo['MONTHLY_RELEASE_COUNT'] = 0
         versionInfo['BUILD_COUNT'] = 0
@@ -54,8 +55,8 @@ android {
 
     defaultConfig {
         applicationId "com.chobocho.cardgame"
-        minSdkVersion 31
-        targetSdkVersion 34
+        minSdkVersion 26
+        targetSdkVersion 36
         versionCode releaseVersionCode
         versionName "${versionHeader}.${thisYear}${thisMonth}${monthVersion}.${buildCount}"
         setProperty("archivesBaseName", "freecell_$versionName")

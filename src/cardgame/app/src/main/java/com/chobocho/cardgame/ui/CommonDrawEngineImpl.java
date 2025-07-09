@@ -42,7 +42,7 @@ public class CommonDrawEngineImpl implements DrawEngine {
     private void onDrawCommon(Canvas g, Bitmap[] cardImages, Bitmap[] buttonImages) {
         Paint paint = new Paint();
         paint.setColor(Color.rgb(88, 214, 141));
-        g.drawRect(0, 0, screenW, screenH, paint);
+        g.drawRect(0, 0, g.getWidth(), g.getHeight(), paint);
         Log.d("CommonDrawEngineImpl", "W: " + screenW + ", H: " + screenH);
         Log.d("CommonDrawEngineImpl C", "W: " + g.getWidth() + ", H: " + g.getHeight());
         // Result Deck

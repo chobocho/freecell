@@ -13,9 +13,20 @@ public class BoardProfile {
     public static int cardGapHeight = 10;
     String version ="";
 
-    public BoardProfile(String version, int w, int h) {
+    public BoardProfile(String version, int width, int height) {
         this.version = version;
-        setScreenSize(w, h);
+        setScreenSize(width, height);
+    }
+
+    public void setScreenSize(int w, int h) {
+        this.screenW = w;
+        this.screenH = h;
+        Log.d(TAG, "W: " + w + ",H: " + h);
+
+        this.cardW = w/9;
+        this.cardH = (int) (this.cardW * 1.5);
+        this.cardG = w/81;
+        this.cardGapHeight = (int)(this.cardH * 0.3);
     }
 
     public int screenWidth() {
@@ -40,17 +51,6 @@ public class BoardProfile {
 
     public int cardGapH() {
         return this.cardGapHeight;
-    }
-
-    public void setScreenSize(int w, int h) {
-        this.screenW = w;
-        this.screenH = h;
-        Log.d(TAG, "W: " + w + ",H: " + h);
-
-        this.cardW = w/9;
-        this.cardH = (int) (this.cardW * 1.5);
-        this.cardG = w/81;
-        this.cardGapHeight = (int)(this.cardH * 0.3);
     }
 
     public static int[] imageName = {
