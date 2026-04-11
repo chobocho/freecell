@@ -64,10 +64,10 @@ export class Renderer {
     constructor(canvas) {
         this.canvas = canvas;
         this.images = new Map();
-        // 애니메이션
+        // 애니메이션 — 승리/실패를 분리해 서로 간섭하지 않도록 함
         this._winAnimCards = [];
         this._failAnimCards = [];
-        this._animActive = false;
+        this._winAnimActive = false;
         /** 실패 이펙트 진행 중 (보드 숨김 + 폴링용) */
         this._failAnimating = false;
         const ctx = canvas.getContext('2d');
@@ -146,11 +146,11 @@ export class Renderer {
                 this._drawKeyOverlay(game);
             }
         }
-        // 이펙트 (승리/패배 애니메이션)
-        if (this._animActive) {
+        // 이펙트 — 승리/실패 각각 독립 실행
+        if (this._winAnimActive)
             this._stepWinAnim();
+        if (this._failAnimating)
             this._stepFailAnim();
-        }
     }
     // ── 배경 ─────────────────────────────────────────────────────────────────
     _drawBackground(W, H) {
@@ -526,7 +526,7 @@ export class Renderer {
                 });
             }
         }
-        this._animActive = true;
+        this._winAnimActive = true;
     }
     _stepWinAnim() {
         const { ctx } = this;
@@ -555,7 +555,7 @@ export class Renderer {
         }
         const allDone = this._winAnimCards.every(c => c.alpha <= 0);
         if (allDone)
-            this._animActive = false;
+            this._winAnimActive = false;
     }
     // ── 패배 이펙트 (바람에 흩날리기) ────────────────────────────────────────
     startFailEffect(game) {
@@ -582,7 +582,7 @@ export class Renderer {
                 });
             }
         }
-        this._animActive = true;
+        this._failAnimating = true; // already set above; keep explicit
     }
     _stepFailAnim() {
         const { ctx } = this;
@@ -618,7 +618,6 @@ export class Renderer {
         }
         const allDone = this._failAnimCards.every(c => c.alpha <= 0);
         if (allDone) {
-            this._animActive = false;
             this._failAnimating = false;
         }
     }
@@ -637,7 +636,7 @@ export class Renderer {
             ctx.fill();
         }
     }
-    get isAnimating() { return this._animActive; }
+    get isAnimating() { return this._winAnimActive || this._failAnimating; }
     get isFailAnimating() { return this._failAnimating; }
 }
 //# sourceMappingURL=renderer.js.map

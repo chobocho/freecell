@@ -126,12 +126,12 @@ export class Renderer {
   private images: ImageMap = new Map();
   private layout!: BoardLayout;
 
-  // 애니메이션
+  // 애니메이션 — 승리/실패를 분리해 서로 간섭하지 않도록 함
   private _winAnimCards: WinAnimCard[] = [];
   private _failAnimCards: FailAnimCard[] = [];
-  private _animActive: boolean = false;
+  private _winAnimActive: boolean  = false;
   /** 실패 이펙트 진행 중 (보드 숨김 + 폴링용) */
-  private _failAnimating: boolean = false;
+  private _failAnimating: boolean  = false;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
@@ -228,11 +228,9 @@ export class Renderer {
       }
     }
 
-    // 이펙트 (승리/패배 애니메이션)
-    if (this._animActive) {
-      this._stepWinAnim();
-      this._stepFailAnim();
-    }
+    // 이펙트 — 승리/실패 각각 독립 실행
+    if (this._winAnimActive)  this._stepWinAnim();
+    if (this._failAnimating)  this._stepFailAnim();
   }
 
   // ── 배경 ─────────────────────────────────────────────────────────────────
@@ -669,7 +667,7 @@ export class Renderer {
         });
       }
     }
-    this._animActive = true;
+    this._winAnimActive = true;
   }
 
   private _stepWinAnim(): void {
@@ -698,14 +696,14 @@ export class Renderer {
     }
 
     const allDone = this._winAnimCards.every(c => c.alpha <= 0);
-    if (allDone) this._animActive = false;
+    if (allDone) this._winAnimActive = false;
   }
 
   // ── 패배 이펙트 (바람에 흩날리기) ────────────────────────────────────────
 
   startFailEffect(game: FreecellGame): void {
-    this._failAnimCards = [];
-    this._failAnimating = true;
+    this._failAnimCards  = [];
+    this._failAnimating  = true;
     const { cardW, cardH } = this.layout;
 
     for (let di = DeckIndex.Tableau1; di <= DeckIndex.Tableau8; di++) {
@@ -728,7 +726,7 @@ export class Renderer {
         });
       }
     }
-    this._animActive = true;
+    this._failAnimating = true; // already set above; keep explicit
   }
 
   private _stepFailAnim(): void {
@@ -771,7 +769,6 @@ export class Renderer {
 
     const allDone = this._failAnimCards.every(c => c.alpha <= 0);
     if (allDone) {
-      this._animActive = false;
       this._failAnimating = false;
     }
   }
@@ -792,7 +789,7 @@ export class Renderer {
     }
   }
 
-  get isAnimating(): boolean { return this._animActive; }
+  get isAnimating(): boolean { return this._winAnimActive || this._failAnimating; }
   get isFailAnimating(): boolean { return this._failAnimating; }
 }
 
