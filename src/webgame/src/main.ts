@@ -46,6 +46,12 @@ class GameController {
   private elConfirmMsg!:    HTMLElement;
   private elConfirmYesBtn!: HTMLButtonElement;
 
+  // 게임 번호 선택 관련
+  private gameNumberOverlay!:  HTMLElement;
+  private elGameNumberInput!:  HTMLInputElement;
+  /** 게임 번호 다이얼로그를 열기 직전 게임 상태 */
+  private _gnReturnState: 'idle' | 'play' | 'pause' | 'win' = 'idle';
+
   constructor() {
     this.game    = new FreecellGame();
     this.sound   = new SoundManager();
@@ -89,11 +95,13 @@ class GameController {
     this.elWinTime    = document.getElementById('win-time')!;
     this.resumeBtn    = document.getElementById('overlay-continue-btn') as HTMLButtonElement;
     this.elSavedInfo  = document.getElementById('saved-info')!;
-    this.elSaveToast    = document.getElementById('save-toast')!;
-    this.helpOverlay    = document.getElementById('help-overlay')!;
-    this.confirmOverlay = document.getElementById('confirm-overlay')!;
-    this.elConfirmMsg    = document.getElementById('confirm-msg')!;
-    this.elConfirmYesBtn = document.getElementById('confirm-yes-btn') as HTMLButtonElement;
+    this.elSaveToast      = document.getElementById('save-toast')!;
+    this.helpOverlay      = document.getElementById('help-overlay')!;
+    this.confirmOverlay   = document.getElementById('confirm-overlay')!;
+    this.elConfirmMsg     = document.getElementById('confirm-msg')!;
+    this.elConfirmYesBtn  = document.getElementById('confirm-yes-btn') as HTMLButtonElement;
+    this.gameNumberOverlay = document.getElementById('game-number-overlay')!;
+    this.elGameNumberInput = document.getElementById('game-number-input') as HTMLInputElement;
   }
 
   private _bindButtons(): void {
@@ -105,7 +113,7 @@ class GameController {
     // 시작 화면
     document.getElementById('overlay-start-btn')!.addEventListener('click', async () => {
       await this.sound.init();
-      this._newGame();
+      this._showGameNumberDialog();
     });
     // 이어하기 버튼
     this.resumeBtn.addEventListener('click', async () => {
@@ -118,11 +126,22 @@ class GameController {
     });
     // 승리 후 새 게임
     document.getElementById('overlay-win-new-btn')!.addEventListener('click', () => {
-      this._newGame();
+      this._showGameNumberDialog();
     });
     // 도움말 닫기
     document.getElementById('help-close-btn')!.addEventListener('click', () => {
       this._toggleHelp();
+    });
+    // 게임 번호 선택
+    document.getElementById('game-number-start-btn')!.addEventListener('click', () => {
+      this._onGameNumberStart();
+    });
+    document.getElementById('game-number-cancel-btn')!.addEventListener('click', () => {
+      this._onGameNumberCancel();
+    });
+    this.elGameNumberInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this._onGameNumberStart();
+      if (e.key === 'Escape') this._onGameNumberCancel();
     });
     // 새 게임 / 다시 하기 확인 팝업
     document.getElementById('confirm-yes-btn')!.addEventListener('click', () => {
@@ -130,7 +149,7 @@ class GameController {
       if (this._confirmAction === 'restart') {
         this._doRestart();
       } else {
-        this._newGame();
+        this._showGameNumberDialog();
       }
     });
     document.getElementById('confirm-no-btn')!.addEventListener('click', () => {
@@ -204,6 +223,7 @@ class GameController {
     this.elapsed = restoredElapsed;
     this._hideAllOverlays();
     this._updateUI();
+    this._updateGameNumberDisplay();
 
     if (this.game.state === 'play') {
       this._startTimer();
@@ -262,12 +282,49 @@ class GameController {
     this.confirmOverlay.classList.remove('hidden');
   }
 
-  /** 새 게임 요청: 게임 진행 중이면 확인 팝업, 아니면 즉시 시작 */
+  /** 새 게임 요청: 게임 진행 중이면 확인 팝업, 아니면 게임 번호 선택으로 */
   private _requestNewGame(): void {
     if (this.game.state === 'play' || this.game.state === 'pause') {
       this._showConfirm('newgame');
     } else {
-      this._newGame();
+      this._showGameNumberDialog();
+    }
+  }
+
+  /** 게임 번호 선택 다이얼로그 표시 */
+  private _showGameNumberDialog(): void {
+    this._gnReturnState = this.game.state;
+    this._hideAllOverlays();
+    this.elGameNumberInput.value = '';
+    this.gameNumberOverlay.classList.remove('hidden');
+    // 약간의 딜레이 후 포커스 (오버레이 전환 애니메이션 후)
+    setTimeout(() => this.elGameNumberInput.focus(), 50);
+  }
+
+  /** 게임 번호 다이얼로그에서 시작 */
+  private _onGameNumberStart(): void {
+    const raw = this.elGameNumberInput.value.trim();
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    const gameNumber = (!isNaN(parsed) && parsed >= 1 && parsed <= 32000) ? parsed : undefined;
+    this.gameNumberOverlay.classList.add('hidden');
+    this._newGame(gameNumber);
+  }
+
+  /** 게임 번호 다이얼로그에서 취소 */
+  private _onGameNumberCancel(): void {
+    this.gameNumberOverlay.classList.add('hidden');
+    const s = this._gnReturnState;
+    if (s === 'idle') {
+      this.startOverlay.classList.remove('hidden');
+    } else if (s === 'win') {
+      this.winOverlay.classList.remove('hidden');
+    } else if (s === 'pause') {
+      this.pauseOverlay.classList.remove('hidden');
+    } else {
+      // play 상태였던 경우 (confirm → game-number-dialog 경로)
+      this.game.resume();
+      this._startTimer();
+      this.elPauseBtn.textContent = '⏸ 일시정지';
     }
   }
 
@@ -302,16 +359,24 @@ class GameController {
     }, 100);
   }
 
-  private _newGame(): void {
+  private _newGame(gameNumber?: number): void {
     this._stopTimer();
-    this.storage.clear(); // 새 게임 시작 시 저장 삭제
-    this.game.deal();
+    this.storage.clear();
+    this.game.deal(gameNumber);
     this.elapsed = 0;
     this._startTimer();
     this._hideAllOverlays();
-    this.elPauseBtn.textContent = '⏸ 일시정지'; // 확인 팝업 경유 시 텍스트 원복
+    this.elPauseBtn.textContent = '⏸ 일시정지';
     this._updateUI();
-    this._scheduleSave(); // 새 게임 시작 상태도 저장
+    this._updateGameNumberDisplay();
+    this._scheduleSave();
+  }
+
+  private _updateGameNumberDisplay(): void {
+    const el = document.getElementById('game-number-display');
+    if (!el) return;
+    const n = this.game.gameNumber;
+    el.textContent = n > 0 ? `#${n}` : '';
   }
 
   private _undo(): void {
@@ -397,6 +462,7 @@ class GameController {
     this.winOverlay.classList.add('hidden');
     this.helpOverlay.classList.add('hidden');
     this.confirmOverlay.classList.add('hidden');
+    this.gameNumberOverlay.classList.add('hidden');
   }
 
   /** F1 또는 닫기 버튼으로 도움말 토글 */

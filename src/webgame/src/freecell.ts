@@ -26,6 +26,8 @@ export class FreecellGame {
   private _history: MoveCommand[] = [];
   private _state: GameState = 'idle';
   private _moveCount: number = 0;
+  /** 현재 게임 번호 (0 = 랜덤) */
+  private _gameNumber: number = 0;
   /** deal() 직후 저장한 초기 배열 (다시 하기용) */
   private _initialSnapshot: import('./storage.js').GameSnapshot | null = null;
 
@@ -40,9 +42,10 @@ export class FreecellGame {
 
   // ── Getter ──────────────────────────────────────────────────────────────
 
-  get state(): GameState  { return this._state; }
-  get moveCount(): number { return this._moveCount; }
-  get canUndo(): boolean  { return this._history.length > 0; }
+  get state(): GameState    { return this._state; }
+  get moveCount(): number   { return this._moveCount; }
+  get canUndo(): boolean    { return this._history.length > 0; }
+  get gameNumber(): number  { return this._gameNumber; }
 
   getDeck(index: DeckIndex): Deck { return this._decks[index]; }
 
@@ -66,16 +69,15 @@ export class FreecellGame {
 
   /**
    * 새 게임 시작: 52장을 셔플하여 8개 태블로에 배분
-   * - 컬럼 1~4: 7장씩
-   * - 컬럼 5~8: 6장씩
-   * - 각 컬럼 맨 위 카드만 오픈
+   * @param gameNumber 1~32000: MS FreeCell 게임 번호 / undefined: 무작위
    */
-  deal(): void {
+  deal(gameNumber?: number): void {
     this._buildDecks();
     this._history = [];
     this._moveCount = 0;
+    this._gameNumber = gameNumber ?? 0;
 
-    const init = new InitDeck();
+    const init = new InitDeck(gameNumber);
     // 카드를 순서대로 태블로에 배분 (원본 Android 배분 방식 동일)
     for (let i = 0; i < 52; i++) {
       const colIndex = i % 8;
@@ -359,13 +361,14 @@ export class FreecellGame {
     }));
 
     return {
-      version:   1,
-      savedAt:   Date.now(),
-      gameState: this._state,
-      moveCount: this._moveCount,
+      version:    1,
+      savedAt:    Date.now(),
+      gameState:  this._state,
+      moveCount:  this._moveCount,
       elapsed,
       decks,
       history,
+      gameNumber: this._gameNumber,
     };
   }
 
@@ -394,8 +397,9 @@ export class FreecellGame {
         didOpenCard: h.didOpenCard,
       }));
 
-      this._moveCount = snapshot.moveCount;
-      this._state     = snapshot.gameState === 'pause' ? 'pause' : 'play';
+      this._moveCount  = snapshot.moveCount;
+      this._state      = snapshot.gameState === 'pause' ? 'pause' : 'play';
+      this._gameNumber = snapshot.gameNumber ?? 0;
 
       return snapshot.elapsed;
     } catch {

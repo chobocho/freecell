@@ -24,13 +24,14 @@ export interface SavedMove {
 }
 
 export interface GameSnapshot {
-  version:   number;   // 스키마 버전 (하위호환용)
-  savedAt:   number;   // Date.now() 타임스탬프
-  gameState: string;   // 'play' | 'pause'
-  moveCount: number;
-  elapsed:   number;   // 경과 시간 (초)
-  decks:     SavedDeck[];
-  history:   SavedMove[];
+  version:    number;   // 스키마 버전 (하위호환용)
+  savedAt:    number;   // Date.now() 타임스탬프
+  gameState:  string;   // 'play' | 'pause'
+  moveCount:  number;
+  elapsed:    number;   // 경과 시간 (초)
+  decks:      SavedDeck[];
+  history:    SavedMove[];
+  gameNumber: number;   // 0 = 랜덤, 1~32000 = MS FreeCell 게임 번호
 }
 
 // ─── 상수 ──────────────────────────────────────────────────────────────────

@@ -71,9 +71,17 @@ export class Deck {
 }
 // ─── InitDeck: 52장 셔플 덱 ──────────────────────────────────────────────────
 export class InitDeck extends Deck {
-    constructor() {
+    /**
+     * @param gameNumber 1~32000: MS FreeCell 호환 시드 셔플 / undefined: 무작위
+     */
+    constructor(gameNumber) {
         super();
-        this._createAndShuffle();
+        if (gameNumber !== undefined && gameNumber >= 1 && gameNumber <= 32000) {
+            this._createWithGameNumber(gameNumber);
+        }
+        else {
+            this._createAndShuffle();
+        }
     }
     _createAndShuffle() {
         this._cards = [];
@@ -85,14 +93,33 @@ export class InitDeck extends Deck {
                 this._cards.push(card);
             }
         }
-        this._shuffle();
-    }
-    _shuffle() {
         // Fisher-Yates 셔플
         for (let i = this._cards.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [this._cards[i], this._cards[j]] = [this._cards[j], this._cards[i]];
         }
+    }
+    /**
+     * MS FreeCell LCG 알고리즘으로 시드 기반 셔플
+     * 카드 인덱스: 0=A♣ 1=2♣ … 12=K♣ 13=A♦ … 51=K♠
+     */
+    _createWithGameNumber(gameNumber) {
+        const indices = [];
+        for (let i = 0; i < 52; i++)
+            indices.push(i);
+        let seed = gameNumber;
+        for (let i = 51; i >= 0; i--) {
+            seed = (214013 * seed + 2531011) & 0x7FFFFFFF;
+            const j = (seed >> 16) % (i + 1);
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        // indices[51]이 첫 번째 배분 카드 → pop()은 배열 끝(_cards[51])부터 반환하므로 그대로 저장
+        const figures = [Figure.Club, Figure.Diamond, Figure.Heart, Figure.Spade];
+        this._cards = indices.map(k => {
+            const card = new Card(figures[Math.floor(k / 13)], (k % 13 + 1));
+            card.open();
+            return card;
+        });
     }
     canAccept(_card) { return false; }
 }

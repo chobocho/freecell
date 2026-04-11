@@ -7,6 +7,8 @@ export class FreecellGame {
         this._history = [];
         this._state = 'idle';
         this._moveCount = 0;
+        /** 현재 게임 번호 (0 = 랜덤) */
+        this._gameNumber = 0;
         /** deal() 직후 저장한 초기 배열 (다시 하기용) */
         this._initialSnapshot = null;
         this._buildDecks();
@@ -15,6 +17,7 @@ export class FreecellGame {
     get state() { return this._state; }
     get moveCount() { return this._moveCount; }
     get canUndo() { return this._history.length > 0; }
+    get gameNumber() { return this._gameNumber; }
     getDeck(index) { return this._decks[index]; }
     // ── 초기화 ─────────────────────────────────────────────────────────────
     _buildDecks() {
@@ -34,15 +37,14 @@ export class FreecellGame {
     }
     /**
      * 새 게임 시작: 52장을 셔플하여 8개 태블로에 배분
-     * - 컬럼 1~4: 7장씩
-     * - 컬럼 5~8: 6장씩
-     * - 각 컬럼 맨 위 카드만 오픈
+     * @param gameNumber 1~32000: MS FreeCell 게임 번호 / undefined: 무작위
      */
-    deal() {
+    deal(gameNumber) {
         this._buildDecks();
         this._history = [];
         this._moveCount = 0;
-        const init = new InitDeck();
+        this._gameNumber = gameNumber ?? 0;
+        const init = new InitDeck(gameNumber);
         // 카드를 순서대로 태블로에 배분 (원본 Android 배분 방식 동일)
         for (let i = 0; i < 52; i++) {
             const colIndex = i % 8;
@@ -316,6 +318,7 @@ export class FreecellGame {
             elapsed,
             decks,
             history,
+            gameNumber: this._gameNumber,
         };
     }
     /**
@@ -344,6 +347,7 @@ export class FreecellGame {
             }));
             this._moveCount = snapshot.moveCount;
             this._state = snapshot.gameState === 'pause' ? 'pause' : 'play';
+            this._gameNumber = snapshot.gameNumber ?? 0;
             return snapshot.elapsed;
         }
         catch {
