@@ -48,7 +48,7 @@ for (let f = 0; f < 4; f++) {
     }
 }
 export async function loadImages(baseUrl = 'img/') {
-    const extras = ['abg', 'none']; // bg 이미지 제거 — 배경은 단색으로 처리
+    const extras = ['abg']; // 카드 뒷면 이미지만 추가 로드
     const allNames = [...IMAGE_NAMES, ...extras];
     const map = new Map();
     const promises = allNames.map(name => new Promise((resolve) => {
