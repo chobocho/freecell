@@ -159,6 +159,38 @@
 
 **테스트**: 기존 72개 전체 통과 (신규 케이스 없음)
 
+## 2026-04-11 (추가 3)
+
+### 키보드 전용 플레이 + Ctrl 키 힌트 오버레이
+
+**src/renderer.ts** (수정)
+- `KeyboardSelectState` 인터페이스 추가 (순환 참조 방지를 위해 여기서 정의)
+- `KEY_LABELS`: 덱 인덱스 → 키 레이블 매핑 (화면 배치 순서와 일치)
+- `render()` 에 `kbState?` 파라미터 추가
+- `_drawKbHighlight()`: 선택된 소스 덱에 황금 테두리 + 옅은 오버레이
+- `_drawKeyOverlay()`: Ctrl 누르는 동안 전체 화면 다크 오버레이 + 각 슬롯에 키 배지
+- `_drawKeyLegend()`: 오버레이 하단 범례 (전체 키 매핑 안내)
+
+**src/input.ts** (수정)
+- `DECK_KEY_LABELS`, `DECK_KEYS` 상수 추가 (화면 배치 일치 키 매핑)
+  - Foundation: `Q W E R`, FreeCell: `U I O P`, Tableau: `1-8`
+- `_kbState: KeyboardSelectState` 필드 추가
+- `getKeyboardState()` 메서드 추가
+- `_handleDeckKey()`: 소스 선택 → 이동 흐름 처리
+- `_kbMovableCount()`: 키보드 이동 시 카드 수 결정
+- Ctrl `keydown/keyup` 추적 (오버레이 표시용)
+- `Enter`: 선택된 덱 → Foundation 자동이동
+- `Esc`: 키보드 선택 취소 우선, 이후 드래그 취소, 일시정지 순서
+
+**src/main.ts** (수정)
+- `render()` 호출 시 `input.getKeyboardState()` 전달
+
+**index.html** (수정)
+- 도움말 패널에 키보드 카드 조작 섹션 추가 (키 배치 표, 조작 설명)
+- Ctrl 힌트 오버레이 설명 추가
+
+**테스트**: 기존 72개 전체 통과
+
 ### 빌드 방법
 ```bash
 tsc          # 단일 컴파일
