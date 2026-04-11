@@ -200,12 +200,17 @@ export class InputHandler {
         const deck = this.game.getDeck(from);
         if (deck.isEmpty())
             return 0;
-        // FreeCell / Foundation 소스: 항상 1장
+        // 소스가 FreeCell / Foundation: 항상 1장
         if (from >= DeckIndex.Free1 && from <= DeckIndex.Free4)
             return 1;
         if (from >= DeckIndex.Found1 && from <= DeckIndex.Found4)
             return 1;
-        // Tableau: 이동 가능 최대 수
+        // 목적지가 FreeCell / Foundation: 항상 1장 (규칙상 1장만 허용)
+        if (to >= DeckIndex.Free1 && to <= DeckIndex.Free4)
+            return 1;
+        if (to >= DeckIndex.Found1 && to <= DeckIndex.Found4)
+            return 1;
+        // Tableau → Tableau: 이동 가능 최대 수
         const maxCount = this.game.maxMovableCount(this.game.emptyFreeCellCount(), this.game.emptyTableauCount(to));
         return Math.min(deck.size(), maxCount);
     }
