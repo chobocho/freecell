@@ -247,6 +247,7 @@ class GameController {
     this.elapsed = 0;
     this._startTimer();
     this._hideAllOverlays();
+    this.elPauseBtn.textContent = '⏸ 일시정지'; // 확인 팝업 경유 시 텍스트 원복
     this._updateUI();
     this._scheduleSave(); // 새 게임 시작 상태도 저장
   }
