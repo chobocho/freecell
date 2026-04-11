@@ -136,6 +136,29 @@
 **테스트 추가** (test.mjs): 직렬화/복원 케이스 7개
 - **합계: 72개 전체 통과**
 
+## 2026-04-11 (추가 2)
+
+### F1 단축키 도움말 화면 추가
+
+**src/input.ts** (수정)
+- `InputCallbacks`에 `onHelp(): void` 콜백 추가
+- 키보드 핸들러에 `F1` 케이스 추가 → `onHelp()` 호출
+
+**src/main.ts** (수정)
+- `helpOverlay` 필드 및 `_setupDOM()`에서 초기화
+- `onHelp` 콜백 연결 (`_toggleHelp()` 호출)
+- `help-close-btn` 클릭 이벤트 바인딩
+- `_hideAllOverlays()`에 `helpOverlay` 추가
+- `_toggleHelp()` 메서드: 도움말 열기/닫기, 게임 중 타이머 자동 일시정지/재개
+
+**index.html** (수정)
+- `#help-overlay` 패널 추가 (단축키 테이블, 마우스/터치 조작, 게임 규칙, 닫기 버튼)
+
+**css/style.css** (수정)
+- `.help-panel`, `.help-table`, `kbd`, `.help-rules` 스타일 추가
+
+**테스트**: 기존 72개 전체 통과 (신규 케이스 없음)
+
 ### 빌드 방법
 ```bash
 tsc          # 단일 컴파일
