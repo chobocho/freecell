@@ -93,14 +93,15 @@ export class InputHandler {
       if (this.drag.isDragging) this._cancelDrag();
     });
 
-    // 더블클릭 자동 이동
+    // 더블클릭 자동 이동 — _getCardAt으로 카드 단위 정확한 히트테스트
     this.canvas.addEventListener('dblclick', e => {
       e.preventDefault();
+      if (this.game.state !== 'play') return;
       const rect = this.canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const deckIdx = this._getDeckAt(x, y);
-      if (deckIdx !== null) this.cb.onAutoMove(deckIdx);
+      const hit = this._getCardAt(x, y);
+      if (hit !== null) this.cb.onAutoMove(hit.deckIdx);
     });
   }
 
@@ -173,11 +174,18 @@ export class InputHandler {
           if (!e.ctrlKey) { e.preventDefault(); this.cb.onNewGame(); }
           break;
         case 'Enter':
-          // 키보드로 선택된 덱을 Foundation으로 자동이동
-          if (this.game.state === 'play' && this._kbState.selectedDeck !== null) {
-            e.preventDefault();
-            this.cb.onAutoMove(this._kbState.selectedDeck);
-            this._kbState.selectedDeck = null;
+          // Foundation 자동이동: 키보드 선택 덱 우선, 없으면 마우스 드래그 중인 덱
+          if (this.game.state === 'play') {
+            if (this._kbState.selectedDeck !== null) {
+              e.preventDefault();
+              this.cb.onAutoMove(this._kbState.selectedDeck);
+              this._kbState.selectedDeck = null;
+            } else if (this.drag.isDragging) {
+              e.preventDefault();
+              const fromDeck = this.drag.fromDeck;
+              this._cancelDrag();
+              this.cb.onAutoMove(fromDeck);
+            }
           }
           break;
         case ' ':
