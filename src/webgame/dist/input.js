@@ -110,6 +110,10 @@ export class InputHandler {
                     else
                         this.cb.onPause();
                     break;
+                case 'F1':
+                    e.preventDefault();
+                    this.cb.onHelp();
+                    break;
             }
         });
     }

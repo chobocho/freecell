@@ -22,6 +22,7 @@ class GameController {
             onNewGame: () => this._newGame(),
             onUndo: () => this._undo(),
             onPause: () => this._togglePause(),
+            onHelp: () => this._toggleHelp(),
             onMoveCard: (from, to, count) => this._handleMove(from, to, count),
             onAutoMove: (from) => this._handleAutoMove(from),
         });
@@ -51,6 +52,7 @@ class GameController {
         this.resumeBtn = document.getElementById('overlay-continue-btn');
         this.elSavedInfo = document.getElementById('saved-info');
         this.elSaveToast = document.getElementById('save-toast');
+        this.helpOverlay = document.getElementById('help-overlay');
     }
     _bindButtons() {
         document.getElementById('btn-new').addEventListener('click', () => this._newGame());
@@ -73,6 +75,10 @@ class GameController {
         // 승리 후 새 게임
         document.getElementById('overlay-win-new-btn').addEventListener('click', () => {
             this._newGame();
+        });
+        // 도움말 닫기
+        document.getElementById('help-close-btn').addEventListener('click', () => {
+            this._toggleHelp();
         });
     }
     _bindResize() {
@@ -248,6 +254,26 @@ class GameController {
         this.startOverlay.classList.add('hidden');
         this.pauseOverlay.classList.add('hidden');
         this.winOverlay.classList.add('hidden');
+        this.helpOverlay.classList.add('hidden');
+    }
+    /** F1 또는 닫기 버튼으로 도움말 토글 */
+    _toggleHelp() {
+        const isOpen = !this.helpOverlay.classList.contains('hidden');
+        if (isOpen) {
+            this.helpOverlay.classList.add('hidden');
+            // 도움말을 닫을 때 게임 중이었으면 타이머 재개
+            if (this.game.state === 'play' && this.timerInterval === 0) {
+                this._startTimer();
+            }
+        }
+        else {
+            // 다른 오버레이 위에 도움말 표시 (start/pause/win 상태에서도 열 수 있음)
+            this.helpOverlay.classList.remove('hidden');
+            // 게임 진행 중이면 타이머 일시 정지
+            if (this.game.state === 'play') {
+                this._stopTimer();
+            }
+        }
     }
     // ── 타이머 ─────────────────────────────────────────────────────────────
     _startTimer() {

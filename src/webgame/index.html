@@ -73,6 +73,46 @@
         </button>
       </div>
 
+      <!-- 도움말 (F1) -->
+      <div class="overlay hidden" id="help-overlay">
+        <div class="help-panel">
+          <h2>⌨ 단축키 도움말</h2>
+
+          <table class="help-table">
+            <thead>
+              <tr><th>키</th><th>동작</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><kbd>F1</kbd></td>              <td>도움말 열기 / 닫기</td></tr>
+              <tr><td><kbd>Z</kbd></td>               <td>되돌리기 (Undo)</td></tr>
+              <tr><td><kbd>N</kbd></td>               <td>새 게임</td></tr>
+              <tr><td><kbd>Space</kbd></td>           <td>일시정지 / 재개</td></tr>
+              <tr><td><kbd>Esc</kbd></td>             <td>일시정지 / 드래그 취소</td></tr>
+            </tbody>
+          </table>
+
+          <h3>🖱 마우스 / 👆 터치</h3>
+          <table class="help-table">
+            <tbody>
+              <tr><td>드래그 앤 드롭</td>      <td>카드 이동</td></tr>
+              <tr><td>더블클릭 / 더블탭</td>  <td>Foundation으로 자동 이동</td></tr>
+            </tbody>
+          </table>
+
+          <h3>♠ 게임 규칙</h3>
+          <ul class="help-rules">
+            <li>Tableau: 교대 색상 + 내림차순으로 쌓기</li>
+            <li>FreeCell: 카드 1장 임시 보관 (4칸)</li>
+            <li>Foundation: 같은 무늬 A→K 순서로 완성</li>
+            <li>모든 카드를 Foundation에 올리면 승리!</li>
+          </ul>
+
+          <button class="btn btn-new" id="help-close-btn" style="margin-top:12px; padding:8px 24px;">
+            닫기 (F1 / Esc)
+          </button>
+        </div>
+      </div>
+
       <!-- 승리 -->
       <div class="overlay hidden" id="win-overlay">
         <h2>🎉 승리!</h2>

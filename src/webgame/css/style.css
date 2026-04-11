@@ -238,6 +238,87 @@ html, body {
   to   { text-shadow: 0 0 30px #ffd54f, 0 0 60px #ff8f00; }
 }
 
+/* ─── 도움말 패널 ────────────────────────────────────────── */
+.help-panel {
+  background: #1b3a1b;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-width: 420px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.help-panel h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffd54f;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.help-panel h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #a5d6a7;
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.help-table th {
+  text-align: left;
+  color: #81c784;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.help-table td {
+  padding: 5px 8px;
+  color: #e8f5e9;
+  vertical-align: middle;
+}
+
+.help-table tr:hover td {
+  background: rgba(255,255,255,0.04);
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  font-family: monospace;
+  font-size: 0.82rem;
+  background: #2e4d2e;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  color: #c8e6c9;
+  white-space: nowrap;
+}
+
+.help-rules {
+  list-style: none;
+  padding: 0;
+  font-size: 0.82rem;
+  color: #c8e6c9;
+  line-height: 1.9;
+}
+
+.help-rules li::before {
+  content: '→ ';
+  color: #66bb6a;
+}
+
 /* ─── 반응형 ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
   #header h1 { font-size: 0.85rem; }

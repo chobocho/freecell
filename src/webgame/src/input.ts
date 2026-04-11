@@ -8,6 +8,7 @@ export interface InputCallbacks {
   onNewGame():   void;
   onUndo():      void;
   onPause():     void;
+  onHelp():      void;
   onMoveCard(from: DeckIndex, to: DeckIndex, count: number): boolean;
   onAutoMove(from: DeckIndex): void;
 }
@@ -128,6 +129,10 @@ export class InputHandler {
           e.preventDefault();
           if (this.drag.isDragging) this._cancelDrag();
           else this.cb.onPause();
+          break;
+        case 'F1':
+          e.preventDefault();
+          this.cb.onHelp();
           break;
       }
     });
