@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1b5e20">
+  <title>FreeCell</title>
+  <link rel="icon" href="img/icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── 헤더 ─────────────────────────────────────────────── -->
+    <header id="header">
+      <h1>♠ FreeCell</h1>
+
+      <div class="header-info">
+        <div class="stat-item">
+          <span class="stat-label">이동</span>
+          <span class="stat-value" id="moves-value">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">시간</span>
+          <span class="stat-value" id="timer-value">0:00</span>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-undo" id="btn-undo" disabled title="되돌리기 (Z)">
+          ↩ 되돌리기
+        </button>
+        <button class="btn btn-pause" id="btn-pause" title="일시정지 (Space)">
+          ⏸ 일시정지
+        </button>
+        <button class="btn btn-new" id="btn-new" title="새 게임 (N)">
+          ✦ 새 게임
+        </button>
+      </div>
+    </header>
+
+    <!-- ── 캔버스 ─────────────────────────────────────────────── -->
+    <div id="canvas-wrapper">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- 시작 화면 -->
+      <div class="overlay" id="start-overlay">
+        <div class="logo">♠ FreeCell</div>
+        <p class="subtitle">카드를 모두 Foundation으로 이동하면 승리!</p>
+        <div style="margin-top:8px; font-size:0.8rem; color:#aed581; text-align:center; line-height:1.8">
+          <span>🖱 드래그 앤 드롭</span>&nbsp;·&nbsp;
+          <span>👆 더블탭 자동이동</span>&nbsp;·&nbsp;
+          <span>⌨ Z: 되돌리기</span>
+        </div>
+        <button class="btn btn-new" id="overlay-start-btn" style="margin-top:16px; padding:12px 32px; font-size:1rem;">
+          ✦ 게임 시작
+        </button>
+      </div>
+
+      <!-- 일시정지 -->
+      <div class="overlay hidden" id="pause-overlay">
+        <h2>⏸ 일시정지</h2>
+        <p>게임이 일시정지 되었습니다.</p>
+        <button class="btn btn-new" id="overlay-resume-btn" style="padding:10px 28px; font-size:0.95rem;">
+          ▶ 계속하기
+        </button>
+      </div>
+
+      <!-- 승리 -->
+      <div class="overlay hidden" id="win-overlay">
+        <h2>🎉 승리!</h2>
+        <p id="win-stats">
+          이동 횟수: <strong id="win-moves">0</strong>회 &nbsp;|&nbsp;
+          소요 시간: <strong id="win-time">0:00</strong>
+        </p>
+        <button class="btn btn-new" id="overlay-win-new-btn" style="padding:10px 28px; font-size:0.95rem;">
+          ✦ 새 게임
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="dist/main.js"></script>
+</body>
+</html>

@@ -10,3 +10,11 @@
 /apk
 /log
 /src/cardgame/app/release/app-release.aab
+
+# IDE 설정 (공통)
+.idea/
+*.iml
+
+# webgame
+/src/webgame/.idea/
+/src/webgame/CLAUDE.md
