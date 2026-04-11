@@ -96,7 +96,10 @@ export class InputHandler {
     // 더블클릭 자동 이동
     this.canvas.addEventListener('dblclick', e => {
       e.preventDefault();
-      const deckIdx = this._getDeckAt(e.clientX, e.clientY);
+      const rect = this.canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const deckIdx = this._getDeckAt(x, y);
       if (deckIdx !== null) this.cb.onAutoMove(deckIdx);
     });
   }
