@@ -298,7 +298,7 @@ class GameController {
     _loop() {
         const step = () => {
             if (this.game.state !== 'idle') {
-                this.renderer.render(this.game, this.input.getDragState(), this.elapsed);
+                this.renderer.render(this.game, this.input.getDragState(), this.elapsed, this.input.getKeyboardState());
             }
             this._rafId = requestAnimationFrame(step);
             void this._rafId;

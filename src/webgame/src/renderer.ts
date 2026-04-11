@@ -2,6 +2,20 @@ import { Card, Figure } from './card.js';
 import { DeckIndex, TableauDeck } from './deck.js';
 import { FreecellGame } from './freecell.js';
 
+// 키보드 선택 상태 (input.ts와 동일 구조 — 순환 참조 방지를 위해 여기서 재정의)
+export interface KeyboardSelectState {
+  selectedDeck: DeckIndex | null;
+  ctrlHeld: boolean;
+}
+
+// 덱 인덱스 → 키 레이블 (화면 배치 순서와 일치)
+const KEY_LABELS: Record<number, string> = {
+  0: 'Q', 1: 'W', 2: 'E', 3: 'R',     // Foundation 1-4
+  4: 'U', 5: 'I', 6: 'O', 7: 'P',     // FreeCell 1-4
+  8: '1', 9: '2', 10: '3', 11: '4',   // Tableau 1-4
+  12: '5', 13: '6', 14: '7', 15: '8', // Tableau 5-8
+};
+
 // ─── 레이아웃 계산 ─────────────────────────────────────────────────────────
 
 export interface CardRect {
@@ -179,7 +193,12 @@ export class Renderer {
 
   // ── 메인 렌더 ────────────────────────────────────────────────────────────
 
-  render(game: FreecellGame, drag: DragState, _elapsedSec: number): void {
+  render(
+    game: FreecellGame,
+    drag: DragState,
+    _elapsedSec: number,
+    kbState?: KeyboardSelectState,
+  ): void {
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
 
@@ -196,13 +215,21 @@ export class Renderer {
       this._drawDragCards(drag);
     }
 
+    // 키보드 선택 하이라이트
+    if (kbState?.selectedDeck !== null && kbState?.selectedDeck !== undefined) {
+      this._drawKbHighlight(kbState.selectedDeck, game);
+    }
+
+    // Ctrl 키 힌트 오버레이
+    if (kbState?.ctrlHeld) {
+      this._drawKeyOverlay(game);
+    }
+
     // 이펙트 (승리/패배 애니메이션)
     if (this._animActive) {
       this._stepWinAnim();
       this._stepFailAnim();
     }
-
-    // UI 오버레이 (캔버스 내부에 그릴 필요 없음 - HTML overlay 사용)
   }
 
   // ── 배경 ─────────────────────────────────────────────────────────────────
@@ -461,6 +488,155 @@ export class Renderer {
     ctx.lineWidth   = 3;
     ctx.setLineDash([6, 3]);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 키보드 선택 하이라이트 ───────────────────────────────────────────────
+
+  /** 키보드로 선택된 소스 덱에 황금 테두리 표시 */
+  private _drawKbHighlight(deckIdx: DeckIndex, game: FreecellGame): void {
+    const { ctx } = this;
+    const { cardW, cardH } = this.layout;
+    const L = this.layout;
+
+    let x: number, y: number, h: number;
+
+    if (deckIdx >= DeckIndex.Found1 && deckIdx <= DeckIndex.Found4) {
+      const col = deckIdx - DeckIndex.Found1;
+      x = L.foundX[col]; y = L.topRowY; h = cardH;
+    } else if (deckIdx >= DeckIndex.Free1 && deckIdx <= DeckIndex.Free4) {
+      const col = deckIdx - DeckIndex.Free1;
+      x = L.freeX[col]; y = L.topRowY; h = cardH;
+    } else {
+      const col = deckIdx - DeckIndex.Tableau1;
+      x = L.tabX[col]; y = L.tableauY;
+      // 전체 컬럼 높이까지 하이라이트
+      h = Math.max(cardH, this.getDeckBottomY(deckIdx, game) - y);
+    }
+
+    const pad = 4;
+    ctx.save();
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur  = 16;
+    ctx.beginPath();
+    this._roundRect(x - pad, y - pad, cardW + pad * 2, h + pad * 2, 10);
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+
+    // 선택된 영역에 옅은 황금 오버레이
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#ffd700';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ── Ctrl 키 힌트 오버레이 ────────────────────────────────────────────────
+
+  /** Ctrl 누르는 동안 각 덱 슬롯에 키 레이블 배지 표시 */
+  private _drawKeyOverlay(game: FreecellGame): void {
+    const { ctx } = this;
+    const { cardW, cardH } = this.layout;
+    const L = this.layout;
+
+    // 배지 크기 계산
+    const badgeSize = Math.max(18, Math.floor(cardW * 0.32));
+    const fontSize  = Math.max(11, Math.floor(badgeSize * 0.6));
+
+    // 전체 화면 반투명 다크 오버레이
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
+    ctx.restore();
+
+    const drawBadge = (key: string, x: number, y: number, w: number, h: number) => {
+      // 카드/슬롯 중앙에 큰 키 레이블
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const bw = badgeSize * 1.8;
+      const bh = badgeSize * 1.4;
+      const bx = cx - bw / 2;
+      const by = cy - bh / 2;
+
+      ctx.save();
+
+      // 배지 배경
+      ctx.beginPath();
+      this._roundRect(bx, by, bw, bh, 6);
+      ctx.fillStyle = 'rgba(20, 20, 20, 0.85)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 220, 80, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 키 텍스트
+      ctx.fillStyle = '#ffd740';
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(key, cx, cy);
+
+      ctx.restore();
+    };
+
+    // Foundation 슬롯
+    for (let i = DeckIndex.Found1; i <= DeckIndex.Found4; i++) {
+      const col = i - DeckIndex.Found1;
+      const key = KEY_LABELS[i];
+      drawBadge(key, L.foundX[col], L.topRowY, cardW, cardH);
+    }
+
+    // FreeCell 슬롯
+    for (let i = DeckIndex.Free1; i <= DeckIndex.Free4; i++) {
+      const col = i - DeckIndex.Free1;
+      const key = KEY_LABELS[i];
+      drawBadge(key, L.freeX[col], L.topRowY, cardW, cardH);
+    }
+
+    // Tableau 슬롯
+    for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
+      const col = i - DeckIndex.Tableau1;
+      const key = KEY_LABELS[i];
+      const bottomY = this.getDeckBottomY(i as DeckIndex, game);
+      const h = Math.max(cardH, bottomY - L.tableauY);
+      drawBadge(key, L.tabX[col], L.tableauY, cardW, h);
+    }
+
+    // 하단 범례
+    this._drawKeyLegend();
+  }
+
+  /** Ctrl 오버레이 하단 범례 */
+  private _drawKeyLegend(): void {
+    const { ctx } = this;
+    const W = this.canvas.clientWidth;
+    const H = this.canvas.clientHeight;
+
+    const text = 'Q W E R  =  Foundation  │  U I O P  =  FreeCell  │  1-8  =  Tableau  │  Enter  =  자동이동';
+    const pad  = 10;
+    const fh   = Math.max(11, Math.min(14, Math.floor(W / 55)));
+
+    ctx.save();
+    ctx.font = `${fh}px monospace`;
+    const tw = ctx.measureText(text).width;
+
+    const bx = (W - tw) / 2 - pad;
+    const by = H - fh - pad * 2 - 8;
+    const bw = tw + pad * 2;
+    const bh = fh + pad * 2;
+
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.82)';
+    ctx.beginPath();
+    this._roundRect(bx, by, bw, bh, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,220,80,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffd740';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, W / 2, by + bh / 2);
     ctx.restore();
   }
 

@@ -1,4 +1,29 @@
 import { DeckIndex } from './deck.js';
+// ─── 덱 키 매핑 ──────────────────────────────────────────────────────────
+// 화면 배치와 일치:
+//   Foundation(좌상단): Q W E R
+//   FreeCell(우상단):   U I O P
+//   Tableau(하단):      1 2 3 4 5 6 7 8
+export const DECK_KEY_LABELS = {
+    [DeckIndex.Found1]: 'Q', [DeckIndex.Found2]: 'W',
+    [DeckIndex.Found3]: 'E', [DeckIndex.Found4]: 'R',
+    [DeckIndex.Free1]: 'U', [DeckIndex.Free2]: 'I',
+    [DeckIndex.Free3]: 'O', [DeckIndex.Free4]: 'P',
+    [DeckIndex.Tableau1]: '1', [DeckIndex.Tableau2]: '2',
+    [DeckIndex.Tableau3]: '3', [DeckIndex.Tableau4]: '4',
+    [DeckIndex.Tableau5]: '5', [DeckIndex.Tableau6]: '6',
+    [DeckIndex.Tableau7]: '7', [DeckIndex.Tableau8]: '8',
+};
+const DECK_KEYS = {
+    'q': DeckIndex.Found1, 'w': DeckIndex.Found2,
+    'e': DeckIndex.Found3, 'r': DeckIndex.Found4,
+    'u': DeckIndex.Free1, 'i': DeckIndex.Free2,
+    'o': DeckIndex.Free3, 'p': DeckIndex.Free4,
+    '1': DeckIndex.Tableau1, '2': DeckIndex.Tableau2,
+    '3': DeckIndex.Tableau3, '4': DeckIndex.Tableau4,
+    '5': DeckIndex.Tableau5, '6': DeckIndex.Tableau6,
+    '7': DeckIndex.Tableau7, '8': DeckIndex.Tableau8,
+};
 // ─── InputHandler ──────────────────────────────────────────────────────────
 export class InputHandler {
     constructor(canvas, game, renderer, cb) {
@@ -15,11 +40,13 @@ export class InputHandler {
         };
         this.lastTapTime = 0;
         this.lastTapDeck = null;
+        this._kbState = { selectedDeck: null, ctrlHeld: false };
         this._bindMouse();
         this._bindTouch();
         this._bindKeyboard();
     }
     getDragState() { return this.drag; }
+    getKeyboardState() { return this._kbState; }
     // ── 마우스 ──────────────────────────────────────────────────────────────
     _bindMouse() {
         this.canvas.addEventListener('mousedown', e => {
@@ -84,13 +111,25 @@ export class InputHandler {
     // ── 키보드 ──────────────────────────────────────────────────────────────
     _bindKeyboard() {
         window.addEventListener('keydown', e => {
+            // Ctrl 누름 추적 (오버레이 표시용)
+            if (e.key === 'Control') {
+                this._kbState.ctrlHeld = true;
+                return;
+            }
+            // 덱 선택 키 (Ctrl/Meta/Alt 없을 때만)
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                const key = e.key.toLowerCase();
+                if (key in DECK_KEYS) {
+                    e.preventDefault();
+                    this._handleDeckKey(DECK_KEYS[key]);
+                    return;
+                }
+            }
             switch (e.key) {
                 case 'z':
                 case 'Z':
-                    if (e.ctrlKey || e.metaKey || !e.ctrlKey) {
-                        e.preventDefault();
-                        this.cb.onUndo();
-                    }
+                    e.preventDefault();
+                    this.cb.onUndo();
                     break;
                 case 'n':
                 case 'N':
@@ -99,16 +138,30 @@ export class InputHandler {
                         this.cb.onNewGame();
                     }
                     break;
+                case 'Enter':
+                    // 키보드로 선택된 덱을 Foundation으로 자동이동
+                    if (this.game.state === 'play' && this._kbState.selectedDeck !== null) {
+                        e.preventDefault();
+                        this.cb.onAutoMove(this._kbState.selectedDeck);
+                        this._kbState.selectedDeck = null;
+                    }
+                    break;
                 case ' ':
                     e.preventDefault();
                     this.cb.onPause();
                     break;
                 case 'Escape':
                     e.preventDefault();
-                    if (this.drag.isDragging)
+                    if (this._kbState.selectedDeck !== null) {
+                        // 키보드 선택 취소 우선
+                        this._kbState.selectedDeck = null;
+                    }
+                    else if (this.drag.isDragging) {
                         this._cancelDrag();
-                    else
+                    }
+                    else {
                         this.cb.onPause();
+                    }
                     break;
                 case 'F1':
                     e.preventDefault();
@@ -116,6 +169,45 @@ export class InputHandler {
                     break;
             }
         });
+        window.addEventListener('keyup', e => {
+            if (e.key === 'Control')
+                this._kbState.ctrlHeld = false;
+        });
+    }
+    /** 덱 키 처리: 소스 선택 → 이동 */
+    _handleDeckKey(deckIdx) {
+        if (this.game.state !== 'play')
+            return;
+        const { selectedDeck } = this._kbState;
+        if (selectedDeck === null) {
+            // 소스 선택
+            this._kbState.selectedDeck = deckIdx;
+        }
+        else if (selectedDeck === deckIdx) {
+            // 같은 덱 재선택 → 취소
+            this._kbState.selectedDeck = null;
+        }
+        else {
+            // 다른 덱 선택 → 이동 시도
+            const count = this._kbMovableCount(selectedDeck, deckIdx);
+            this.cb.onMoveCard(selectedDeck, deckIdx, count);
+            // 성공/실패 무관하게 선택 해제
+            this._kbState.selectedDeck = null;
+        }
+    }
+    /** 키보드 이동 시 카드 수 결정 (최대 이동 가능 수량) */
+    _kbMovableCount(from, to) {
+        const deck = this.game.getDeck(from);
+        if (deck.isEmpty())
+            return 0;
+        // FreeCell / Foundation 소스: 항상 1장
+        if (from >= DeckIndex.Free1 && from <= DeckIndex.Free4)
+            return 1;
+        if (from >= DeckIndex.Found1 && from <= DeckIndex.Found4)
+            return 1;
+        // Tableau: 이동 가능 최대 수
+        const maxCount = this.game.maxMovableCount(this.game.emptyFreeCellCount(), this.game.emptyTableauCount(to));
+        return Math.min(deck.size(), maxCount);
     }
     // ── 공통 처리 ────────────────────────────────────────────────────────────
     _onPress(cx, cy) {
