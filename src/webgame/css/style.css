@@ -189,6 +189,36 @@ html, body {
   color: #81c784;
 }
 
+/* ─── 새 게임 확인 팝업 ─────────────────────────────────── */
+.confirm-panel {
+  background: #1b3a1b;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 14px;
+  padding: 28px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.confirm-msg {
+  font-size: 1rem;
+  color: #e8f5e9;
+  line-height: 1.7;
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-cancel {
+  background: #546e7a;
+  color: #fff;
+}
+.btn-cancel:hover { background: #455a64; }
+
 /* ─── 이어하기 버튼 ──────────────────────────────────────── */
 .btn-continue {
   background: #1565c0;

@@ -29,6 +29,7 @@ class GameController {
   private pauseOverlay!:   HTMLElement;
   private winOverlay!:     HTMLElement;
   private helpOverlay!:    HTMLElement;
+  private confirmOverlay!: HTMLElement;
   private elWinMoves!:     HTMLElement;
   private elWinTime!:      HTMLElement;
   private resumeBtn!:      HTMLButtonElement;
@@ -46,7 +47,7 @@ class GameController {
     this._setupDOM();
     this.renderer = new Renderer(this.canvas);
     this.input = new InputHandler(this.canvas, this.game, this.renderer, {
-      onNewGame:  () => this._newGame(),
+      onNewGame:  () => this._requestNewGame(),
       onUndo:     () => this._undo(),
       onPause:    () => this._togglePause(),
       onHelp:     () => this._toggleHelp(),
@@ -82,12 +83,13 @@ class GameController {
     this.elWinTime    = document.getElementById('win-time')!;
     this.resumeBtn    = document.getElementById('overlay-continue-btn') as HTMLButtonElement;
     this.elSavedInfo  = document.getElementById('saved-info')!;
-    this.elSaveToast  = document.getElementById('save-toast')!;
-    this.helpOverlay  = document.getElementById('help-overlay')!;
+    this.elSaveToast    = document.getElementById('save-toast')!;
+    this.helpOverlay    = document.getElementById('help-overlay')!;
+    this.confirmOverlay = document.getElementById('confirm-overlay')!;
   }
 
   private _bindButtons(): void {
-    document.getElementById('btn-new')!.addEventListener('click', () => this._newGame());
+    document.getElementById('btn-new')!.addEventListener('click', () => this._requestNewGame());
     this.elUndoBtn.addEventListener('click', () => this._undo());
     this.elPauseBtn.addEventListener('click', () => this._togglePause());
 
@@ -112,6 +114,21 @@ class GameController {
     // 도움말 닫기
     document.getElementById('help-close-btn')!.addEventListener('click', () => {
       this._toggleHelp();
+    });
+    // 새 게임 확인 팝업
+    document.getElementById('confirm-yes-btn')!.addEventListener('click', () => {
+      this.confirmOverlay.classList.add('hidden');
+      this._newGame();
+    });
+    document.getElementById('confirm-no-btn')!.addEventListener('click', () => {
+      this.confirmOverlay.classList.add('hidden');
+      // 일시정지 상태였으면 재개
+      if (this.game.state === 'pause') {
+        this.game.resume();
+        this._startTimer();
+        this.pauseOverlay.classList.add('hidden');
+        this.elPauseBtn.textContent = '⏸ 일시정지';
+      }
     });
   }
 
@@ -208,6 +225,21 @@ class GameController {
 
   // ── 게임 흐름 ───────────────────────────────────────────────────────────
 
+  /** 새 게임 요청: 게임 진행 중이면 확인 팝업, 아니면 즉시 시작 */
+  private _requestNewGame(): void {
+    if (this.game.state === 'play' || this.game.state === 'pause') {
+      // 진행 중이면 일시정지 후 확인 팝업
+      if (this.game.state === 'play') {
+        this.game.pause();
+        this._stopTimer();
+        this.elPauseBtn.textContent = '▶ 계속';
+      }
+      this.confirmOverlay.classList.remove('hidden');
+    } else {
+      this._newGame();
+    }
+  }
+
   private _newGame(): void {
     this._stopTimer();
     this.storage.clear(); // 새 게임 시작 시 저장 삭제
@@ -301,6 +333,7 @@ class GameController {
     this.pauseOverlay.classList.add('hidden');
     this.winOverlay.classList.add('hidden');
     this.helpOverlay.classList.add('hidden');
+    this.confirmOverlay.classList.add('hidden');
   }
 
   /** F1 또는 닫기 버튼으로 도움말 토글 */
