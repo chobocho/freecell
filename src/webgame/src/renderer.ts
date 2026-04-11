@@ -93,7 +93,7 @@ for (let f = 0; f < 4; f++) {
 export type ImageMap = Map<string, HTMLImageElement>;
 
 export async function loadImages(baseUrl: string = 'img/'): Promise<ImageMap> {
-  const extras = ['abg', 'bg', 'none'];
+  const extras = ['abg', 'none']; // bg 이미지 제거 — 배경은 단색으로 처리
   const allNames = [...IMAGE_NAMES, ...extras];
 
   const map: ImageMap = new Map();
@@ -237,13 +237,8 @@ export class Renderer {
 
   private _drawBackground(W: number, H: number): void {
     const { ctx } = this;
-    const bgImg = this.images.get('bg');
-    if (bgImg) {
-      ctx.drawImage(bgImg, 0, 0, W, H);
-    } else {
-      ctx.fillStyle = '#2e7d32';
-      ctx.fillRect(0, 0, W, H);
-    }
+    ctx.fillStyle = '#1b5e20'; // 오리지널 프리셀 스타일 단색 녹색
+    ctx.fillRect(0, 0, W, H);
   }
 
   // ── Foundation 덱 ────────────────────────────────────────────────────────
