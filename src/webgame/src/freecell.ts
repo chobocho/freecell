@@ -1,8 +1,9 @@
-import { Card, Figure } from './card.js';
+import { Card, Figure, CardNumber } from './card.js';
 import {
   Deck, DeckIndex, TOTAL_DECKS,
   InitDeck, FoundationDeck, FreeCellDeck, TableauDeck,
 } from './deck.js';
+import type { GameSnapshot, SavedMove } from './storage.js';
 
 // ─── 게임 상태 ──────────────────────────────────────────────────────────────
 
@@ -320,6 +321,73 @@ export class FreecellGame {
       if (this.canMove(from, i as DeckIndex, 1)) return true;
     }
     return false;
+  }
+
+  // ── 직렬화 / 복원 ─────────────────────────────────────────────────────
+
+  /**
+   * 현재 게임 상태를 IndexedDB 저장용 스냅샷으로 직렬화
+   */
+  serialize(elapsed: number): GameSnapshot {
+    const decks = this._decks.map(deck => ({
+      cards: deck.toArray().map(card => ({
+        figure: card.figure as number,
+        number: card.number as number,
+        isOpen: card.isOpen,
+      })),
+    }));
+
+    const history: SavedMove[] = this._history.map(cmd => ({
+      from:        cmd.from as number,
+      to:          cmd.to   as number,
+      count:       cmd.count,
+      didOpenCard: cmd.didOpenCard,
+    }));
+
+    return {
+      version:   1,
+      savedAt:   Date.now(),
+      gameState: this._state,
+      moveCount: this._moveCount,
+      elapsed,
+      decks,
+      history,
+    };
+  }
+
+  /**
+   * 스냅샷에서 게임 상태 복원
+   * @returns 복원된 경과 시간(초), 실패 시 null
+   */
+  restore(snapshot: GameSnapshot): number | null {
+    try {
+      // 덱 복원
+      this._buildDecks();
+      for (let i = 0; i < Math.min(snapshot.decks.length, TOTAL_DECKS); i++) {
+        const deckData = snapshot.decks[i];
+        for (const cardData of deckData.cards) {
+          const card = new Card(cardData.figure as Figure, cardData.number as CardNumber);
+          if (cardData.isOpen) card.open();
+          this._decks[i].push(card);
+        }
+      }
+
+      // 이동 이력 복원
+      this._history = snapshot.history.map(h => ({
+        from:        h.from as DeckIndex,
+        to:          h.to   as DeckIndex,
+        count:       h.count,
+        didOpenCard: h.didOpenCard,
+      }));
+
+      this._moveCount = snapshot.moveCount;
+      this._state     = snapshot.gameState === 'pause' ? 'pause' : 'play';
+
+      return snapshot.elapsed;
+    } catch {
+      this.reset();
+      return null;
+    }
   }
 
   /**

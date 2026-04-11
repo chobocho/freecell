@@ -189,6 +189,40 @@ html, body {
   color: #81c784;
 }
 
+/* ─── 이어하기 버튼 ──────────────────────────────────────── */
+.btn-continue {
+  background: #1565c0;
+  color: #fff;
+  border: 2px solid #90caf9;
+}
+.btn-continue:hover { background: #0d47a1; }
+
+.saved-info {
+  font-size: 0.78rem;
+  color: #90caf9;
+  margin-top: -4px;
+  letter-spacing: 0.02em;
+}
+
+.hidden { display: none !important; }
+
+/* ─── 자동저장 토스트 알림 ───────────────────────────────── */
+#save-toast {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #a5d6a7;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 20;
+}
+#save-toast.show { opacity: 1; }
+
 /* ─── 승리 화면 ─────────────────────────────────────────── */
 #win-overlay {
   background: radial-gradient(circle at center, rgba(255,193,7,0.15) 0%, rgba(0,0,0,0.75) 100%);

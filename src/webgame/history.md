@@ -105,6 +105,37 @@
 - requestAnimationFrame 기반 60fps 렌더 루프
 - 승리 시 2초 애니메이션 후 승리 오버레이 표시
 
+## 2026-04-11 (추가)
+
+### IndexedDB 자동저장 / 이어하기 기능
+
+**src/storage.ts** (신규)
+- `GameStorage` 클래스: IndexedDB "freecell-db" 기반 저장/불러오기/삭제
+- 저장 키: `"autosave"` (단일 슬롯)
+- `GameSnapshot` 인터페이스: 16개 덱 전체 + 이동 이력 + 경과시간 + 버전 정보
+- 스키마 버전 관리 (버전 불일치 시 저장 무효 처리)
+- `formatSavedAt()`: 저장 시각을 "MM/DD HH:mm" 형식으로 변환
+
+**src/freecell.ts** (추가)
+- `serialize(elapsed)`: 현재 게임 상태 → `GameSnapshot` 변환
+- `restore(snapshot)`: `GameSnapshot` → 게임 상태 복원, 경과시간 반환
+
+**src/main.ts** (수정)
+- 이동/undo마다 `_scheduleSave()` 호출 (디바운스 800ms)
+- 일시정지 시 즉시 저장
+- `pagehide` / `beforeunload` / `visibilitychange` 이벤트에서 즉시 저장
+- 시작 화면 진입 시 저장 여부 확인 → 이어하기 버튼/저장 정보 표시
+- 새 게임 시작 / 승리 완료 시 저장 데이터 삭제
+- 저장 완료 시 토스트 알림 1.5초 표시
+
+**index.html / style.css** (수정)
+- 시작 화면에 "이어하기" 버튼 추가 (저장 없으면 숨김)
+- 저장 정보 표시 (저장 시각 · 이동 횟수 · 경과 시간)
+- 자동저장 토스트 알림 스타일
+
+**테스트 추가** (test.mjs): 직렬화/복원 케이스 7개
+- **합계: 72개 전체 통과**
+
 ### 빌드 방법
 ```bash
 tsc          # 단일 컴파일

@@ -41,6 +41,8 @@
 
     <!-- ── 캔버스 ─────────────────────────────────────────────── -->
     <div id="canvas-wrapper">
+      <!-- 자동저장 토스트 알림 -->
+      <div id="save-toast">💾 자동저장됨</div>
       <canvas id="game-canvas"></canvas>
 
       <!-- 시작 화면 -->
@@ -52,8 +54,13 @@
           <span>👆 더블탭 자동이동</span>&nbsp;·&nbsp;
           <span>⌨ Z: 되돌리기</span>
         </div>
-        <button class="btn btn-new" id="overlay-start-btn" style="margin-top:16px; padding:12px 32px; font-size:1rem;">
-          ✦ 게임 시작
+        <!-- 이어하기 (저장 게임 있을 때만 표시) -->
+        <button class="btn btn-continue hidden" id="overlay-continue-btn" style="margin-top:16px; padding:12px 32px; font-size:1rem;">
+          ▶ 이어하기
+        </button>
+        <p class="saved-info hidden" id="saved-info"></p>
+        <button class="btn btn-new" id="overlay-start-btn" style="margin-top:8px; padding:10px 28px; font-size:0.95rem;">
+          ✦ 새 게임
         </button>
       </div>
 

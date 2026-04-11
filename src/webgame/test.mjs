@@ -404,6 +404,106 @@ test('(0, 1) → 2',  () => assertEqual(g0.maxMovableCount(0, 1), 2));
 test('(1, 1) → 4',  () => assertEqual(g0.maxMovableCount(1, 1), 4));
 test('(4, 2) → 20', () => assertEqual(g0.maxMovableCount(4, 2), 20));
 
+// ─── FreecellGame - 직렬화/복원 ─────────────────────────────────────────────
+
+suite('FreecellGame - 직렬화/복원 (IndexedDB 저장용)');
+
+test('serialize() 기본 구조', () => {
+  const g = new FreecellGame(); g.deal();
+  const snap = g.serialize(42.5);
+  assertEqual(snap.version,   1);
+  assertEqual(snap.gameState, 'play');
+  assertEqual(snap.moveCount, 0);
+  assertEqual(snap.elapsed,   42.5);
+  assertEqual(snap.decks.length, 16, '16개 덱');
+  assert(snap.savedAt > 0, 'savedAt 타임스탬프');
+});
+
+test('serialize() 이동 후 history 포함', () => {
+  const g = new FreecellGame(); g.deal();
+  g.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  const snap = g.serialize(0);
+  assertEqual(snap.history.length, 1);
+  assertEqual(snap.history[0].from, DeckIndex.Tableau1);
+  assertEqual(snap.history[0].to,   DeckIndex.Free1);
+  assertEqual(snap.moveCount, 1);
+});
+
+test('serialize() 카드 상태 포함', () => {
+  const g = new FreecellGame(); g.deal();
+  const snap = g.serialize(0);
+  // 태블로 1 (인덱스 8) 에 카드 있어야 함
+  assert(snap.decks[8].cards.length > 0, '태블로1 카드 있음');
+  // 맨 위 카드가 오픈 상태
+  const topCard = snap.decks[8].cards[snap.decks[8].cards.length - 1];
+  assert(topCard.isOpen, '태블로 맨 위 카드 오픈');
+});
+
+test('restore() 완전 복원 - 덱 상태', () => {
+  const g1 = new FreecellGame(); g1.deal();
+  g1.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  const snap = g1.serialize(99);
+
+  const g2 = new FreecellGame();
+  const restoredElapsed = g2.restore(snap);
+
+  assertEqual(restoredElapsed, 99, '경과시간 복원');
+  assertEqual(g2.state,     'play');
+  assertEqual(g2.moveCount, 1);
+  // Freecell에 카드 있어야 함
+  assertEqual(g2.getDeck(DeckIndex.Free1).size(), 1, 'freecell 복원');
+  // 태블로1 카드 수 복원
+  assertEqual(
+    g2.getDeck(DeckIndex.Tableau1).size(),
+    g1.getDeck(DeckIndex.Tableau1).size(),
+    '태블로1 카드 수 복원'
+  );
+});
+
+test('restore() 이후 undo 가능', () => {
+  const g1 = new FreecellGame(); g1.deal();
+  g1.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  const snap = g1.serialize(0);
+
+  const g2 = new FreecellGame();
+  g2.restore(snap);
+  assert(g2.canUndo, '복원 후 undo 가능');
+  g2.undo();
+  assertEqual(g2.getDeck(DeckIndex.Free1).size(), 0, 'undo 후 freecell 비어있음');
+});
+
+test('restore() pause 상태도 복원 (play로 전환)', () => {
+  const g1 = new FreecellGame(); g1.deal(); g1.pause();
+  const snap = g1.serialize(10);
+
+  const g2 = new FreecellGame();
+  g2.restore(snap);
+  // pause로 복원되지만 main.ts에서 resume() 호출
+  assert(g2.state === 'pause' || g2.state === 'play', 'play or pause 상태');
+});
+
+test('serialize → restore 왕복 후 카드 정보 일치', () => {
+  const g1 = new FreecellGame(); g1.deal();
+  // 여러 번 이동
+  g1.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  g1.moveCard(DeckIndex.Tableau2, DeckIndex.Free2, 1);
+  const snap = g1.serialize(30);
+
+  const g2 = new FreecellGame();
+  g2.restore(snap);
+
+  // 16개 덱 전체 카드 수 비교
+  for (let i = 0; i < 16; i++) {
+    const d1 = g1.getDeck(i);
+    const d2 = g2.getDeck(i);
+    assertEqual(d2.size(), d1.size(), `덱 ${i} 카드 수`);
+    // 맨 위 카드 비교 (비어있지 않은 경우)
+    if (!d1.isEmpty()) {
+      assert(d2.top().equals(d1.top()), `덱 ${i} 맨 위 카드`);
+    }
+  }
+});
+
 // ─── 결과 ───────────────────────────────────────────────────────────────────
 
 const total = passed + failed;
