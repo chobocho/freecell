@@ -40,6 +40,9 @@ class GameController {
   private _toastTimer: number = 0;
   private elSaveToast!: HTMLElement;
 
+  // 새 게임 확인 팝업을 열기 직전 게임이 pause 상태였는지 여부
+  private _confirmFromPause = false;
+
   constructor() {
     this.game    = new FreecellGame();
     this.sound   = new SoundManager();
@@ -122,11 +125,13 @@ class GameController {
     });
     document.getElementById('confirm-no-btn')!.addEventListener('click', () => {
       this.confirmOverlay.classList.add('hidden');
-      // 일시정지 상태였으면 재개
-      if (this.game.state === 'pause') {
+      if (this._confirmFromPause) {
+        // 원래 일시정지 상태였으면 → 일시정지 화면 복원
+        this.pauseOverlay.classList.remove('hidden');
+      } else {
+        // 원래 플레이 중이었으면 → 게임 재개
         this.game.resume();
         this._startTimer();
-        this.pauseOverlay.classList.add('hidden');
         this.elPauseBtn.textContent = '⏸ 일시정지';
       }
     });
@@ -228,12 +233,14 @@ class GameController {
   /** 새 게임 요청: 게임 진행 중이면 확인 팝업, 아니면 즉시 시작 */
   private _requestNewGame(): void {
     if (this.game.state === 'play' || this.game.state === 'pause') {
-      // 진행 중이면 일시정지 후 확인 팝업
+      this._confirmFromPause = this.game.state === 'pause';
       if (this.game.state === 'play') {
         this.game.pause();
         this._stopTimer();
         this.elPauseBtn.textContent = '▶ 계속';
       }
+      // pauseOverlay가 열려 있으면 숨기고 confirm을 그 위에 표시
+      this.pauseOverlay.classList.add('hidden');
       this.confirmOverlay.classList.remove('hidden');
     } else {
       this._newGame();
