@@ -68,6 +68,8 @@ export class Renderer {
         this._winAnimCards = [];
         this._failAnimCards = [];
         this._animActive = false;
+        /** 실패 이펙트 진행 중 (보드 숨김 + 폴링용) */
+        this._failAnimating = false;
         const ctx = canvas.getContext('2d');
         if (!ctx)
             throw new Error('Canvas 2D context를 얻을 수 없습니다.');
@@ -127,21 +129,22 @@ export class Renderer {
         const H = this.canvas.clientHeight;
         // 배경
         this._drawBackground(W, H);
-        // 덱들 그리기
-        this._drawFoundations(game, drag);
-        this._drawFreeCells(game, drag);
-        this._drawTableaus(game, drag);
-        // 드래그 중인 카드
-        if (drag.isDragging) {
-            this._drawDragCards(drag);
-        }
-        // 키보드 선택 하이라이트
-        if (kbState?.selectedDeck !== null && kbState?.selectedDeck !== undefined) {
-            this._drawKbHighlight(kbState.selectedDeck, game);
-        }
-        // Ctrl 키 힌트 오버레이
-        if (kbState?.ctrlHeld) {
-            this._drawKeyOverlay(game);
+        // 실패 이펙트 중에는 보드를 숨김 (카드가 제자리에서 날아가는 효과)
+        if (!this._failAnimating) {
+            this._drawFoundations(game, drag);
+            this._drawFreeCells(game, drag);
+            this._drawTableaus(game, drag);
+            if (drag.isDragging) {
+                this._drawDragCards(drag);
+            }
+            // 키보드 선택 하이라이트
+            if (kbState?.selectedDeck !== null && kbState?.selectedDeck !== undefined) {
+                this._drawKbHighlight(kbState.selectedDeck, game);
+            }
+            // Ctrl 키 힌트 오버레이
+            if (kbState?.ctrlHeld) {
+                this._drawKeyOverlay(game);
+            }
         }
         // 이펙트 (승리/패배 애니메이션)
         if (this._animActive) {
@@ -557,6 +560,7 @@ export class Renderer {
     // ── 패배 이펙트 (바람에 흩날리기) ────────────────────────────────────────
     startFailEffect(game) {
         this._failAnimCards = [];
+        this._failAnimating = true;
         const { cardW, cardH } = this.layout;
         for (let di = DeckIndex.Tableau1; di <= DeckIndex.Tableau8; di++) {
             const deck = game.getDeck(di);
@@ -613,8 +617,10 @@ export class Renderer {
             ctx.restore();
         }
         const allDone = this._failAnimCards.every(c => c.alpha <= 0);
-        if (allDone)
+        if (allDone) {
             this._animActive = false;
+            this._failAnimating = false;
+        }
     }
     _drawFire(cx, cy, w, _phase) {
         const { ctx } = this;
@@ -632,5 +638,6 @@ export class Renderer {
         }
     }
     get isAnimating() { return this._animActive; }
+    get isFailAnimating() { return this._failAnimating; }
 }
 //# sourceMappingURL=renderer.js.map

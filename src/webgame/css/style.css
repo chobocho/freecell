@@ -119,6 +119,12 @@ html, body {
 }
 .btn-pause:hover { background: #e65100; }
 
+.btn-restart {
+  background: #6a1b9a;
+  color: #fff;
+}
+.btn-restart:hover { background: #4a148c; }
+
 /* ─── 캔버스 영역 ────────────────────────────────────────── */
 #canvas-wrapper {
   flex: 1;

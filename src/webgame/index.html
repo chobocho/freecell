@@ -33,6 +33,9 @@
         <button class="btn btn-pause" id="btn-pause" title="일시정지 (Space)">
           ⏸ 일시정지
         </button>
+        <button class="btn btn-restart" id="btn-restart" title="다시 하기 (R)">
+          ♻ 다시 하기
+        </button>
         <button class="btn btn-new" id="btn-new" title="새 게임 (N)">
           ✦ 새 게임
         </button>
@@ -64,10 +67,10 @@
         </button>
       </div>
 
-      <!-- 새 게임 확인 -->
+      <!-- 새 게임 / 다시 하기 확인 -->
       <div class="overlay hidden" id="confirm-overlay">
         <div class="confirm-panel">
-          <p class="confirm-msg">진행 중인 게임을 포기하고<br>새 게임을 시작할까요?</p>
+          <p class="confirm-msg" id="confirm-msg">진행 중인 게임을 포기하고<br>새 게임을 시작할까요?</p>
           <div class="confirm-btns">
             <button class="btn btn-new" id="confirm-yes-btn">✦ 새 게임</button>
             <button class="btn btn-cancel" id="confirm-no-btn">✕ 취소</button>

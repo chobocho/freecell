@@ -7,6 +7,8 @@ export class FreecellGame {
         this._history = [];
         this._state = 'idle';
         this._moveCount = 0;
+        /** deal() 직후 저장한 초기 배열 (다시 하기용) */
+        this._initialSnapshot = null;
         this._buildDecks();
     }
     // ── Getter ──────────────────────────────────────────────────────────────
@@ -56,6 +58,18 @@ export class FreecellGame {
                 deck.top().open();
         }
         this._state = 'play';
+        // 다시 하기를 위한 초기 배열 저장
+        this._initialSnapshot = this.serialize(0);
+    }
+    /**
+     * 동일한 배열로 게임을 처음부터 다시 시작
+     * @returns 복원 성공 여부
+     */
+    restart() {
+        if (!this._initialSnapshot)
+            return false;
+        const result = this.restore(this._initialSnapshot);
+        return result !== null;
     }
     // ── 이동 ────────────────────────────────────────────────────────────────
     /**

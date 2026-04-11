@@ -130,6 +130,8 @@ export class Renderer {
   private _winAnimCards: WinAnimCard[] = [];
   private _failAnimCards: FailAnimCard[] = [];
   private _animActive: boolean = false;
+  /** 실패 이펙트 진행 중 (보드 숨김 + 폴링용) */
+  private _failAnimating: boolean = false;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
@@ -205,24 +207,25 @@ export class Renderer {
     // 배경
     this._drawBackground(W, H);
 
-    // 덱들 그리기
-    this._drawFoundations(game, drag);
-    this._drawFreeCells(game, drag);
-    this._drawTableaus(game, drag);
+    // 실패 이펙트 중에는 보드를 숨김 (카드가 제자리에서 날아가는 효과)
+    if (!this._failAnimating) {
+      this._drawFoundations(game, drag);
+      this._drawFreeCells(game, drag);
+      this._drawTableaus(game, drag);
 
-    // 드래그 중인 카드
-    if (drag.isDragging) {
-      this._drawDragCards(drag);
-    }
+      if (drag.isDragging) {
+        this._drawDragCards(drag);
+      }
 
-    // 키보드 선택 하이라이트
-    if (kbState?.selectedDeck !== null && kbState?.selectedDeck !== undefined) {
-      this._drawKbHighlight(kbState.selectedDeck, game);
-    }
+      // 키보드 선택 하이라이트
+      if (kbState?.selectedDeck !== null && kbState?.selectedDeck !== undefined) {
+        this._drawKbHighlight(kbState.selectedDeck, game);
+      }
 
-    // Ctrl 키 힌트 오버레이
-    if (kbState?.ctrlHeld) {
-      this._drawKeyOverlay(game);
+      // Ctrl 키 힌트 오버레이
+      if (kbState?.ctrlHeld) {
+        this._drawKeyOverlay(game);
+      }
     }
 
     // 이펙트 (승리/패배 애니메이션)
@@ -702,6 +705,7 @@ export class Renderer {
 
   startFailEffect(game: FreecellGame): void {
     this._failAnimCards = [];
+    this._failAnimating = true;
     const { cardW, cardH } = this.layout;
 
     for (let di = DeckIndex.Tableau1; di <= DeckIndex.Tableau8; di++) {
@@ -766,7 +770,10 @@ export class Renderer {
     }
 
     const allDone = this._failAnimCards.every(c => c.alpha <= 0);
-    if (allDone) this._animActive = false;
+    if (allDone) {
+      this._animActive = false;
+      this._failAnimating = false;
+    }
   }
 
   private _drawFire(cx: number, cy: number, w: number, _phase: number): void {
@@ -786,6 +793,7 @@ export class Renderer {
   }
 
   get isAnimating(): boolean { return this._animActive; }
+  get isFailAnimating(): boolean { return this._failAnimating; }
 }
 
 // ─── 애니메이션 카드 타입 ──────────────────────────────────────────────────

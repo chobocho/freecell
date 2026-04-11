@@ -26,6 +26,8 @@ export class FreecellGame {
   private _history: MoveCommand[] = [];
   private _state: GameState = 'idle';
   private _moveCount: number = 0;
+  /** deal() 직후 저장한 초기 배열 (다시 하기용) */
+  private _initialSnapshot: import('./storage.js').GameSnapshot | null = null;
 
   // Foundation 덱별 무늬 (인덱스 순서 고정)
   private static readonly FOUNDATION_FIGURES: Figure[] = [
@@ -89,6 +91,18 @@ export class FreecellGame {
     }
 
     this._state = 'play';
+    // 다시 하기를 위한 초기 배열 저장
+    this._initialSnapshot = this.serialize(0);
+  }
+
+  /**
+   * 동일한 배열로 게임을 처음부터 다시 시작
+   * @returns 복원 성공 여부
+   */
+  restart(): boolean {
+    if (!this._initialSnapshot) return false;
+    const result = this.restore(this._initialSnapshot);
+    return result !== null;
   }
 
   // ── 이동 ────────────────────────────────────────────────────────────────

@@ -13,8 +13,9 @@ class GameController {
         // 자동저장 디바운스 타이머
         this._saveTimer = 0;
         this._toastTimer = 0;
-        // 새 게임 확인 팝업을 열기 직전 게임이 pause 상태였는지 여부
+        // 확인 팝업 관련 상태
         this._confirmFromPause = false;
+        this._confirmAction = 'newgame';
         this.game = new FreecellGame();
         this.sound = new SoundManager();
         this.storage = new GameStorage();
@@ -56,9 +57,12 @@ class GameController {
         this.elSaveToast = document.getElementById('save-toast');
         this.helpOverlay = document.getElementById('help-overlay');
         this.confirmOverlay = document.getElementById('confirm-overlay');
+        this.elConfirmMsg = document.getElementById('confirm-msg');
+        this.elConfirmYesBtn = document.getElementById('confirm-yes-btn');
     }
     _bindButtons() {
         document.getElementById('btn-new').addEventListener('click', () => this._requestNewGame());
+        document.getElementById('btn-restart').addEventListener('click', () => this._requestRestart());
         this.elUndoBtn.addEventListener('click', () => this._undo());
         this.elPauseBtn.addEventListener('click', () => this._togglePause());
         // 시작 화면
@@ -83,10 +87,15 @@ class GameController {
         document.getElementById('help-close-btn').addEventListener('click', () => {
             this._toggleHelp();
         });
-        // 새 게임 확인 팝업
+        // 새 게임 / 다시 하기 확인 팝업
         document.getElementById('confirm-yes-btn').addEventListener('click', () => {
             this.confirmOverlay.classList.add('hidden');
-            this._newGame();
+            if (this._confirmAction === 'restart') {
+                this._doRestart();
+            }
+            else {
+                this._newGame();
+            }
         });
         document.getElementById('confirm-no-btn').addEventListener('click', () => {
             this.confirmOverlay.classList.add('hidden');
@@ -192,22 +201,61 @@ class GameController {
         }, 1500);
     }
     // ── 게임 흐름 ───────────────────────────────────────────────────────────
+    /** 확인 팝업 공통 표시 헬퍼 */
+    _showConfirm(action) {
+        this._confirmAction = action;
+        this._confirmFromPause = this.game.state === 'pause';
+        if (action === 'restart') {
+            this.elConfirmMsg.innerHTML = '현재 게임을 처음부터<br>다시 시작할까요?';
+            this.elConfirmYesBtn.textContent = '♻ 다시 하기';
+        }
+        else {
+            this.elConfirmMsg.innerHTML = '진행 중인 게임을 포기하고<br>새 게임을 시작할까요?';
+            this.elConfirmYesBtn.textContent = '✦ 새 게임';
+        }
+        if (this.game.state === 'play') {
+            this.game.pause();
+            this._stopTimer();
+            this.elPauseBtn.textContent = '▶ 계속';
+        }
+        this.pauseOverlay.classList.add('hidden');
+        this.confirmOverlay.classList.remove('hidden');
+    }
     /** 새 게임 요청: 게임 진행 중이면 확인 팝업, 아니면 즉시 시작 */
     _requestNewGame() {
         if (this.game.state === 'play' || this.game.state === 'pause') {
-            this._confirmFromPause = this.game.state === 'pause';
-            if (this.game.state === 'play') {
-                this.game.pause();
-                this._stopTimer();
-                this.elPauseBtn.textContent = '▶ 계속';
-            }
-            // pauseOverlay가 열려 있으면 숨기고 confirm을 그 위에 표시
-            this.pauseOverlay.classList.add('hidden');
-            this.confirmOverlay.classList.remove('hidden');
+            this._showConfirm('newgame');
         }
         else {
             this._newGame();
         }
+    }
+    /** 다시 하기 요청 */
+    _requestRestart() {
+        if (this.game.state === 'play' || this.game.state === 'pause') {
+            this._showConfirm('restart');
+        }
+        // idle/win 상태에서는 다시 하기 의미 없음
+    }
+    /** 실패 이펙트 후 동일 배열로 재시작 */
+    _doRestart() {
+        this._stopTimer();
+        this.elPauseBtn.textContent = '⏸ 일시정지';
+        this._hideAllOverlays();
+        // 실패 이펙트 시작 (현재 카드 배치에서 불타며 날아감)
+        this.renderer.startFailEffect(this.game);
+        // 애니메이션 완료 후 동일 배열로 재시작
+        const poll = window.setInterval(() => {
+            if (!this.renderer.isFailAnimating) {
+                clearInterval(poll);
+                this.game.restart();
+                this.elapsed = 0;
+                this._startTimer();
+                this._updateUI();
+                this.storage.clear();
+                this._scheduleSave();
+            }
+        }, 100);
     }
     _newGame() {
         this._stopTimer();
