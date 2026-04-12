@@ -116,6 +116,9 @@ export class InputHandler {
     // ── 키보드 ──────────────────────────────────────────────────────────────
     _bindKeyboard() {
         window.addEventListener('keydown', e => {
+            // 입력 필드에 포커스가 있으면 게임 단축키 처리하지 않음
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+                return;
             // Ctrl 누름 추적 (오버레이 표시용)
             if (e.key === 'Control') {
                 this._kbState.ctrlHeld = true;
