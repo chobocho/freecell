@@ -505,6 +505,163 @@ test('serialize → restore 왕복 후 카드 정보 일치', () => {
   }
 });
 
+// ─── FreecellGame - 카드 앞면 유지 (FreeCell 규칙) ──────────────────────────
+
+suite('FreecellGame - 이동/Undo 후 카드 앞면 유지');
+
+test('태블로→FreeCell 이동 후 남은 카드 모두 앞면 유지', () => {
+  const g = new FreecellGame(); g.deal();
+  g.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
+    const deck = g.getDeck(i);
+    for (let ci = 0; ci < deck.size(); ci++) {
+      assert(deck.get(ci).isOpen, `이동 후 Tab${i - DeckIndex.Tableau1 + 1}[${ci}] 닫혀있음`);
+    }
+  }
+});
+
+test('undo 후 태블로 카드 모두 앞면 유지', () => {
+  const g = new FreecellGame(); g.deal();
+  g.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  g.undo();
+  for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
+    const deck = g.getDeck(i);
+    for (let ci = 0; ci < deck.size(); ci++) {
+      assert(deck.get(ci).isOpen, `undo 후 Tab${i - DeckIndex.Tableau1 + 1}[${ci}] 닫혀있음`);
+    }
+  }
+});
+
+// ─── FreecellGame - autoMoveToFoundation ────────────────────────────────────
+
+suite('FreecellGame - autoMoveToFoundation');
+
+test('Foundation에 에이스 올리기 (autoMove)', () => {
+  const g = new FreecellGame();
+  g.deal();
+  // 태블로 컬럼을 비우고 에이스를 맨 위에 직접 배치
+  const tab = g.getDeck(DeckIndex.Tableau1);
+  tab.clear();
+  const ace = new Card(Figure.Club, CardNumber.Ace); ace.open(); tab.push(ace);
+
+  const result = g.autoMoveToFoundation(DeckIndex.Tableau1);
+  assert(result !== null, 'autoMove 결과가 null이면 안 됨');
+  assertEqual(tab.size(), 0, '이동 후 태블로 비어있음');
+  assertEqual(g.getDeck(DeckIndex.Found1).size(), 1, 'Foundation에 에이스 올라감');
+});
+
+test('autoMove 불가한 경우 null 반환', () => {
+  const g = new FreecellGame(); g.deal();
+  // 태블로 1 맨 위가 에이스가 아닌 경우 Foundation 이동 불가 (일반 게임 초기 상태)
+  // Foundation이 비어있으므로 에이스만 받을 수 있음
+  const tab = g.getDeck(DeckIndex.Tableau1);
+  tab.clear();
+  const king = new Card(Figure.Heart, CardNumber.King); king.open(); tab.push(king);
+
+  const result = g.autoMoveToFoundation(DeckIndex.Tableau1);
+  assertEqual(result, null, 'King은 빈 Foundation에 올릴 수 없음');
+  assertEqual(tab.size(), 1, '이동 없이 그대로');
+});
+
+test('Foundation에서 autoMove 불가', () => {
+  const g = new FreecellGame(); g.deal();
+  const result = g.autoMoveToFoundation(DeckIndex.Found1);
+  assertEqual(result, null, 'Foundation에서는 autoMove 불가');
+});
+
+test('isAutoMovable: Foundation에 올릴 수 있으면 true', () => {
+  const g = new FreecellGame(); g.deal();
+  const tab = g.getDeck(DeckIndex.Tableau1);
+  tab.clear();
+  const ace = new Card(Figure.Spade, CardNumber.Ace); ace.open(); tab.push(ace);
+  assert(g.isAutoMovable(DeckIndex.Tableau1), '에이스는 autoMovable');
+});
+
+test('isAutoMovable: 올릴 수 없으면 false', () => {
+  const g = new FreecellGame(); g.deal();
+  const tab = g.getDeck(DeckIndex.Tableau1);
+  tab.clear();
+  const king = new Card(Figure.Heart, CardNumber.King); king.open(); tab.push(king);
+  assert(!g.isAutoMovable(DeckIndex.Tableau1), 'King은 autoMovable 아님');
+});
+
+// ─── FreecellGame - 게임 번호 / restart ─────────────────────────────────────
+
+suite('FreecellGame - 게임 번호 & restart');
+
+test('deal(1) → gameNumber === 1', () => {
+  const g = new FreecellGame(); g.deal(1);
+  assertEqual(g.gameNumber, 1);
+});
+
+test('deal(32000) → gameNumber === 32000', () => {
+  const g = new FreecellGame(); g.deal(32000);
+  assertEqual(g.gameNumber, 32000);
+});
+
+test('deal() 랜덤 → gameNumber === 0', () => {
+  const g = new FreecellGame(); g.deal();
+  assertEqual(g.gameNumber, 0);
+});
+
+test('같은 게임 번호로 deal → 동일 배치', () => {
+  const g1 = new FreecellGame(); g1.deal(42);
+  const g2 = new FreecellGame(); g2.deal(42);
+  for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
+    const d1 = g1.getDeck(i);
+    const d2 = g2.getDeck(i);
+    assertEqual(d1.size(), d2.size(), `Tab${i} 카드 수`);
+    for (let ci = 0; ci < d1.size(); ci++) {
+      assert(d1.get(ci).equals(d2.get(ci)), `Tab${i}[${ci}] 카드 다름`);
+    }
+  }
+});
+
+test('다른 게임 번호 → 다른 배치', () => {
+  const g1 = new FreecellGame(); g1.deal(1);
+  const g2 = new FreecellGame(); g2.deal(2);
+  // 모든 컬럼이 동일할 확률은 사실상 0
+  let allSame = true;
+  outer: for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
+    const d1 = g1.getDeck(i);
+    const d2 = g2.getDeck(i);
+    for (let ci = 0; ci < d1.size(); ci++) {
+      if (!d1.get(ci).equals(d2.get(ci))) { allSame = false; break outer; }
+    }
+  }
+  assert(!allSame, '게임 1과 게임 2의 배치가 달라야 함');
+});
+
+test('restart() → 초기 배치로 복원', () => {
+  const g = new FreecellGame(); g.deal(7);
+  // 초기 맨 위 카드 기록
+  const initTop1 = g.getDeck(DeckIndex.Tableau1).top();
+  const initTop2 = g.getDeck(DeckIndex.Tableau2).top();
+
+  // 여러 번 이동
+  g.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  g.moveCard(DeckIndex.Tableau2, DeckIndex.Free2, 1);
+  assert(g.moveCount > 0, '이동 후 moveCount > 0');
+
+  g.restart();
+  assertEqual(g.moveCount, 0, 'restart 후 moveCount = 0');
+  assertEqual(g.state, 'play', 'restart 후 play 상태');
+  assert(g.getDeck(DeckIndex.Tableau1).top().equals(initTop1), 'Tab1 맨 위 카드 복원');
+  assert(g.getDeck(DeckIndex.Tableau2).top().equals(initTop2), 'Tab2 맨 위 카드 복원');
+});
+
+test('restart() → gameNumber 유지', () => {
+  const g = new FreecellGame(); g.deal(123);
+  g.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  g.restart();
+  assertEqual(g.gameNumber, 123, 'restart 후 gameNumber 유지');
+});
+
+test('restart() 없이 (deal 전) → false 반환', () => {
+  const g = new FreecellGame();
+  assert(!g.restart(), 'deal 전 restart는 false');
+});
+
 // ─── 결과 ───────────────────────────────────────────────────────────────────
 
 const total = passed + failed;
