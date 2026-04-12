@@ -341,7 +341,7 @@ export class InputHandler {
                 const cardBottom = ci === deck.size() - 1
                     ? cardY + cardH
                     : positions[ci + 1]; // 다음 카드가 아래 카드를 가림
-                if (y >= cardY && y <= Math.max(cardBottom, cardY + 20)) {
+                if (y >= cardY && y <= Math.max(cardBottom, cardY + 30)) {
                     return { deckIdx: i, cardIdx: ci };
                 }
             }
