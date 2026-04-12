@@ -197,3 +197,77 @@ tsc          # 단일 컴파일
 tsc --watch  # 감시 모드
 node test.mjs  # 유닛 테스트 실행
 ```
+
+## 2026-04-12
+
+### 게임 번호 선택 기능 (MS FreeCell 호환 RNG)
+
+**src/deck.ts** (수정)
+- `InitDeck` 생성자에 `gameNumber?: number` 파라미터 추가
+- MS FreeCell 호환 선형 합동 생성기(LCG) 구현: `seed = (214013 * seed + 2531011) & 0x7FFFFFFF`
+- `gameNumber` 지정 시 해당 시드로 셔플, 미지정 시 `Math.random()` 무작위 셔플
+
+**src/freecell.ts** (수정)
+- `_gameNumber` 필드 추가 (0 = 랜덤)
+- `deal(gameNumber?: number)`: 게임 번호 저장 및 `InitDeck`에 전달
+- `restart()`: `_initialSnapshot`에서 초기 배치 복원 (다시 하기 기능)
+- `serialize()` / `restore()`: `gameNumber` 필드 직렬화/복원 지원
+
+**src/main.ts** (수정)
+- 새 게임 클릭 → 게임 번호 입력 오버레이 표시
+- 번호 입력 후 시작 → 해당 번호로 `deal()` 호출
+- 헤더에 현재 게임 번호 표시 (`#game-number-display`)
+
+**index.html** (수정)
+- `#game-number-overlay` 추가: 숫자 입력 필드 (1~32000, 비우면 랜덤) + 시작/취소 버튼
+- 헤더 `<h1>`에 `<span id="game-number-display">` 추가
+
+**css/style.css** (수정)
+- `.game-number-input-wrap`, `.game-number-input`, `.game-number-hint` 스타일 추가
+
+**src/input.ts** (수정)
+- 게임 번호 입력 필드에 포커스 중일 때 게임 단축키(N, Z, Space 등) 비활성화
+- 창 포커스 잃을 때 `ctrlHeld` 상태 초기화 (오버레이 잠금 방지)
+
+**테스트 추가** (test.mjs): 기존 72개 전체 통과
+
+### 터치 드래그 버그 수정 (solitaire_web 참고)
+
+**src/input.ts** (수정)
+- `_canvasRect: DOMRect | null` 필드 추가
+- `touchstart`에서 `getBoundingClientRect()` 캐시 → URL 바 숨김/표시 시 좌표 불일치 방지
+- 좌표 이중 변환 버그 수정: `_bindTouch`에서 `t.clientX/Y`를 직접 전달 (기존 `pos.x/y` 이중 차감 제거)
+- `_onPress`: 클릭 지점부터 덱 맨 위까지 카드 전체 grab (중간 카드 잡기 지원)
+- 히트 영역 최소값 30px로 확대 (기존 20px)
+
+**src/renderer.ts** (수정)
+- `_drawTableaus()`: 드래그 중인 카드를 원위치에 25% 알파(고스트)로 표시
+- `calcLayout()` 반응형 패딩/갭 공식 개선: 좁은 화면(Galaxy 분할)에서 카드 오버플로우 방지
+
+**src/freecell.ts** (수정)
+- `deal()`: 모든 태블로 카드 앞면 공개 (FreeCell 규칙 — Klondike와 달리 뒷면 카드 없음)
+- `moveCard()` / `undo()`: `didOpenCard` 관련 데드코드 제거 (FreeCell은 항상 앞면)
+
+**css/style.css** (수정)
+- `#game-canvas`에 `touch-action: none` 직접 지정 (부모 상속 불가 문제 해결)
+- `#header`, `.btn-group`에 `flex-wrap: wrap` 추가
+- 반응형 미디어 쿼리 (solitaire_web 패턴 참고):
+  - `≤600px`: 헤더 패딩/폰트 축소
+  - `≤400px`: `.btn-label` 숨김, `#game-number-display` 숨김
+  - `≤320px`: 마지막 stat-item 숨김
+
+**index.html** (수정)
+- 버튼 텍스트를 `<span class="btn-label">` 으로 감싸 좁은 화면에서 선택적 숨김
+
+**테스트 추가** (test.mjs)
+- "FreeCell: 태블로 모든 카드 앞면 공개" 테스트로 교체
+
+## 2026-04-13
+
+### 테스트 케이스 확충 (87개)
+
+**test.mjs** (수정)
+- **이동/Undo 후 카드 앞면 유지**: `moveCard` 및 `undo` 후 모든 태블로 카드 앞면 유지 검증 (2개)
+- **autoMoveToFoundation**: 에이스 자동이동 성공, King 이동 불가, Foundation에서 호출, `isAutoMovable` true/false (5개)
+- **게임 번호 & restart**: `gameNumber` 1/32000/0(랜덤), 같은 번호 → 동일 배치, 다른 번호 → 다른 배치, `restart()` 초기 배치 복원·`gameNumber` 유지·`deal()` 전 false 반환 (8개)
+- **합계: 87개 전체 통과**
