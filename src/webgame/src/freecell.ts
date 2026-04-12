@@ -86,10 +86,10 @@ export class FreecellGame {
       card.close();
       this._decks[deckIdx].push(card);
     }
-    // 각 태블로 맨 위 카드 오픈
+    // FreeCell은 모든 카드 앞면 공개
     for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
       const deck = this._decks[i];
-      if (!deck.isEmpty()) deck.top()!.open();
+      for (let ci = 0; ci < deck.size(); ci++) deck.get(ci).open();
     }
 
     this._state = 'play';
@@ -143,15 +143,11 @@ export class FreecellGame {
     // 목적지 덱이 맨 아래 카드를 받을 수 있는지
     if (!toDeck.canAccept(cards[0])) return false;
 
-    // 이동 전 아래 카드가 닫혀있었는지 기록 (undo 시 원복용)
-    const belowCard = fromDeck.size() > count ? fromDeck.get(fromDeck.size() - count - 1) : null;
-    const didOpenCard = belowCard !== null && !belowCard.isOpen;
-
     // 실제 이동
     const moved = fromDeck.popMany(count);
     toDeck.pushMany(moved);
 
-    this._history.push({ from, to, count, didOpenCard });
+    this._history.push({ from, to, count, didOpenCard: false });
     this._moveCount++;
 
     // 승리 판정
@@ -197,11 +193,6 @@ export class FreecellGame {
 
     // 이동을 역으로: to → from
     const cards = toDeck.popMany(cmd.count);
-
-    // undo 시 맨 위 카드를 다시 닫기 (pop 시 자동 open된 카드 원복)
-    if (cmd.didOpenCard && !fromDeck.isEmpty()) {
-      fromDeck.top()!.close();
-    }
 
     fromDeck.pushMany(cards);
 

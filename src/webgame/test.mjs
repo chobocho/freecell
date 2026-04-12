@@ -258,12 +258,13 @@ test('컬럼 1~4: 7장, 컬럼 5~8: 6장', () => {
   for (let i = DeckIndex.Tableau5; i <= DeckIndex.Tableau8; i++)
     assertEqual(g.getDeck(i).size(), 6, `Tab${i - DeckIndex.Tableau1 + 1}`);
 });
-test('태블로 맨 위만 오픈, 나머지 닫힘', () => {
+test('FreeCell: 태블로 모든 카드 앞면 공개', () => {
   const g = new FreecellGame(); g.deal();
   for (let i = DeckIndex.Tableau1; i <= DeckIndex.Tableau8; i++) {
     const deck = g.getDeck(i);
-    assert(deck.top().isOpen);
-    if (deck.size() > 1) assert(!deck.get(deck.size() - 2).isOpen);
+    for (let ci = 0; ci < deck.size(); ci++) {
+      assert(deck.get(ci).isOpen, `Tab${i - DeckIndex.Tableau1 + 1} 카드[${ci}] 닫혀있음`);
+    }
   }
 });
 
