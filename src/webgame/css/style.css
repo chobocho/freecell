@@ -29,11 +29,12 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   padding: 6px 12px;
   background: rgba(0, 0, 0, 0.35);
   color: #fff;
   flex-shrink: 0;
-  gap: 8px;
+  gap: 6px;
   min-height: 44px;
 }
 
@@ -85,7 +86,8 @@ html, body {
 /* ─── 헤더 버튼 ─────────────────────────────────────────── */
 .btn-group {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .btn {
@@ -408,11 +410,20 @@ kbd {
 
 /* ─── 반응형 ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
+  #header { padding: 4px 8px; }
   #header h1 { font-size: 0.85rem; }
   .btn { padding: 4px 8px; font-size: 0.72rem; }
   .stat-value { font-size: 0.85rem; }
 }
 
 @media (max-width: 360px) {
-  .stat-item:not(:first-child) { display: none; }
+  #header { padding: 3px 6px; min-height: 36px; }
+  #header h1 { font-size: 0.78rem; }
+  .btn { padding: 3px 6px; font-size: 0.66rem; }
+  .header-info { gap: 8px; }
+}
+
+@media (max-width: 300px) {
+  .stat-item { display: none; }
+  .btn-pause { display: none; }
 }

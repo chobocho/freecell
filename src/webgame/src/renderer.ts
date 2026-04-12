@@ -41,14 +41,14 @@ export interface BoardLayout {
 }
 
 export function calcLayout(canvasW: number, canvasH: number): BoardLayout {
-  // 카드 폭: 화면 폭에서 8컬럼 + 여백이 들어가도록 계산
-  // 최소 40px, 최대 100px
-  const padX    = Math.max(6, canvasW * 0.015);
-  const padY    = Math.max(6, canvasH * 0.02);
-  const colGap  = Math.max(4, canvasW * 0.008);
+  // 좁은 화면(분할 멀티창 등)에서도 8컬럼이 잘리지 않도록 padding/gap을 화면 크기에 비례 축소
+  const padX   = Math.max(2, Math.floor(canvasW * 0.015));
+  const padY   = Math.max(4, Math.floor(canvasH * 0.02));
+  const colGap = Math.max(2, Math.floor(canvasW * 0.008));
 
   const totalColW = canvasW - padX * 2;
-  const cardW = Math.min(100, Math.max(40, Math.floor((totalColW - colGap * 7) / 8)));
+  // 최솟값 16px: 아주 좁은 화면에서도 overflow 없이 8컬럼이 들어가도록
+  const cardW = Math.min(100, Math.max(16, Math.floor((totalColW - colGap * 7) / 8)));
   const cardH = Math.floor(cardW * 1.4);
 
   const stackGap       = Math.max(16, Math.floor(cardH * 0.28));
