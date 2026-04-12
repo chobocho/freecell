@@ -247,22 +247,19 @@ export class InputHandler {
         // Foundation에서는 드래그 불가
         if (deckIdx >= DeckIndex.Found1 && deckIdx <= DeckIndex.Found4)
             return;
-        // 뽑을 카드들 결정
+        // 뽑을 카드들 결정 (클릭한 카드부터 맨 위까지)
         const topIdx = deck.size() - 1;
-        const count = topIdx - cardIdx + 1; // 선택한 카드부터 맨 위까지
+        const count = topIdx - cardIdx + 1;
         const cards = deck.peekTop(count);
         // 첫 카드가 닫혀있으면 드래그 불가
         if (!cards[0].isOpen)
             return;
-        // 시퀀스가 올바른지 확인 (멀티카드)
-        const maxCount = this.game.maxMovableCount(this.game.emptyFreeCellCount(), this.game.emptyTableauCount(deckIdx));
-        const actualCount = Math.min(count, maxCount);
-        const finalCards = deck.peekTop(actualCount);
-        const cardRect = this.renderer.getCardRect(deckIdx, topIdx - actualCount + 1, this.game);
+        // 클릭한 카드의 실제 화면 위치를 기준으로 offset 계산
+        const cardRect = this.renderer.getCardRect(deckIdx, cardIdx, this.game);
         this.drag = {
             isDragging: true,
             fromDeck: deckIdx,
-            cards: [...finalCards],
+            cards: [...cards],
             x, y,
             offsetX: x - cardRect.x,
             offsetY: y - cardRect.y,

@@ -296,12 +296,20 @@ export class Renderer {
       this._drawDeckSlot(x, this.layout.tableauY, 'tableau', col);
 
       const dragCount = (drag.isDragging && drag.fromDeck === deckIdx) ? drag.cards.length : 0;
-      const drawCount = deck.size() - dragCount;
+      const ghostFrom = deck.size() - dragCount; // 이 인덱스부터 드래그 중 (ghost)
 
       let y = this.layout.tableauY;
-      for (let ci = 0; ci < drawCount; ci++) {
+      for (let ci = 0; ci < deck.size(); ci++) {
         const card = deck.get(ci);
-        this._drawCard(card, x, y);
+        if (ci >= ghostFrom) {
+          // 드래그 중인 카드 자리 - 반투명 ghost
+          this.ctx.save();
+          this.ctx.globalAlpha = 0.25;
+          this._drawCard(card, x, y);
+          this.ctx.restore();
+        } else {
+          this._drawCard(card, x, y);
+        }
         y += card.isOpen ? this.layout.stackGap : this.layout.stackGapClosed;
       }
     }
