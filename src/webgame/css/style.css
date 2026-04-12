@@ -411,19 +411,19 @@ kbd {
 /* ─── 반응형 ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
   #header { padding: 4px 8px; }
-  #header h1 { font-size: 0.85rem; }
+  #header h1 { font-size: 0.88rem; }
   .btn { padding: 4px 8px; font-size: 0.72rem; }
   .stat-value { font-size: 0.85rem; }
 }
 
-@media (max-width: 360px) {
-  #header { padding: 3px 6px; min-height: 36px; }
-  #header h1 { font-size: 0.78rem; }
-  .btn { padding: 3px 6px; font-size: 0.66rem; }
+/* 좁은 화면: 버튼 텍스트 숨기고 아이콘만 표시 */
+@media (max-width: 400px) {
+  .btn-label { display: none; }
+  .btn { padding: 5px 7px; font-size: 0.85rem; }
+  #header { padding: 4px 6px; gap: 4px; }
   .header-info { gap: 8px; }
 }
 
 @media (max-width: 300px) {
   .stat-item { display: none; }
-  .btn-pause { display: none; }
 }
