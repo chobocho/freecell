@@ -213,6 +213,11 @@ export class InputHandler {
     window.addEventListener('keyup', e => {
       if (e.key === 'Control') this._kbState.ctrlHeld = false;
     });
+
+    // Ctrl 누른 채 Alt+Tab 등으로 포커스를 잃으면 keyup이 오지 않아 오버레이가 고착됨
+    window.addEventListener('blur', () => {
+      this._kbState.ctrlHeld = false;
+    });
   }
 
   /** 덱 키 처리: 소스 선택 → 이동 */
