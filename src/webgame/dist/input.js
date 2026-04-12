@@ -40,6 +40,8 @@ export class InputHandler {
         };
         this.lastTapTime = 0;
         this.lastTapDeck = null;
+        /** 드래그 시작 시 캐시한 캔버스 rect — 드래그 중 주소창 크기 변화로 rect가 바뀌어도 일관된 좌표 유지 */
+        this._canvasRect = null;
         this._kbState = { selectedDeck: null, ctrlHeld: false };
         this._bindMouse();
         this._bindTouch();
@@ -83,6 +85,8 @@ export class InputHandler {
         this.canvas.addEventListener('touchstart', e => {
             e.preventDefault();
             const t = e.changedTouches[0];
+            // 이벤트 시작 시 rect 캐시 — touchmove/touchend도 동일 rect 사용
+            this._canvasRect = this.canvas.getBoundingClientRect();
             const pos = this._touchPos(t);
             const now = Date.now();
             const deckIdx = this._getDeckAt(pos.x, pos.y);
@@ -236,7 +240,7 @@ export class InputHandler {
     _onPress(cx, cy) {
         if (this.game.state !== 'play')
             return;
-        const rect = this.canvas.getBoundingClientRect();
+        const rect = this._canvasRect ?? this.canvas.getBoundingClientRect();
         const x = cx - rect.left;
         const y = cy - rect.top;
         const hit = this._getCardAt(x, y);
@@ -269,14 +273,14 @@ export class InputHandler {
     _onMove(cx, cy) {
         if (!this.drag.isDragging)
             return;
-        const rect = this.canvas.getBoundingClientRect();
+        const rect = this._canvasRect ?? this.canvas.getBoundingClientRect();
         this.drag.x = cx - rect.left;
         this.drag.y = cy - rect.top;
     }
     _onRelease(cx, cy) {
         if (!this.drag.isDragging)
             return;
-        const rect = this.canvas.getBoundingClientRect();
+        const rect = this._canvasRect ?? this.canvas.getBoundingClientRect();
         const x = cx - rect.left;
         const y = cy - rect.top;
         const target = this._getBestDropTarget(x, y, this.drag.fromDeck);
@@ -396,7 +400,7 @@ export class InputHandler {
         return x >= colX && x <= colX + cardW;
     }
     _touchPos(t) {
-        const rect = this.canvas.getBoundingClientRect();
+        const rect = this._canvasRect ?? this.canvas.getBoundingClientRect();
         return { x: t.clientX - rect.left, y: t.clientY - rect.top };
     }
 }
