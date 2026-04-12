@@ -110,7 +110,7 @@ export class InputHandler {
   private _bindTouch(): void {
     this.canvas.addEventListener('touchstart', e => {
       e.preventDefault();
-      const t = e.changedTouches[0];
+      const t   = e.changedTouches[0];
       const pos = this._touchPos(t);
       const now = Date.now();
       const deckIdx = this._getDeckAt(pos.x, pos.y);
@@ -123,21 +123,19 @@ export class InputHandler {
       }
       this.lastTapTime = now;
       this.lastTapDeck = deckIdx;
-      this._onPress(pos.x, pos.y);
+      this._onPress(t.clientX, t.clientY);
     }, { passive: false });
 
     this.canvas.addEventListener('touchmove', e => {
       e.preventDefault();
       const t = e.changedTouches[0];
-      const pos = this._touchPos(t);
-      this._onMove(pos.x, pos.y);
+      this._onMove(t.clientX, t.clientY);
     }, { passive: false });
 
     this.canvas.addEventListener('touchend', e => {
       e.preventDefault();
       const t = e.changedTouches[0];
-      const pos = this._touchPos(t);
-      this._onRelease(pos.x, pos.y);
+      this._onRelease(t.clientX, t.clientY);
     }, { passive: false });
 
     this.canvas.addEventListener('touchcancel', () => {
