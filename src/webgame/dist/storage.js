@@ -77,11 +77,6 @@ export class GameStorage {
             req.onerror = () => resolve();
         });
     }
-    /** 저장 데이터가 있는지 확인 */
-    async hasSave() {
-        const snap = await this.load();
-        return snap !== null;
-    }
 }
 /** 스냅샷의 저장 시각을 사람이 읽기 쉬운 문자열로 변환 */
 export function formatSavedAt(savedAt) {

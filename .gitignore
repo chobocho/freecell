@@ -21,4 +21,3 @@
 /src/webgame/release/
 # FTP 비밀번호 포함 — 절대 커밋 금지
 /src/webgame/upload.sh
-/src/webgame/.gitconfig

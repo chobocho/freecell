@@ -18,6 +18,8 @@ export class FreecellGame {
     get moveCount() { return this._moveCount; }
     get canUndo() { return this._history.length > 0; }
     get gameNumber() { return this._gameNumber; }
+    /** 초기 배열로 되돌릴 수 있는지 (restart 가능 여부) */
+    get canRestart() { return this._initialSnapshot !== null; }
     getDeck(index) { return this._decks[index]; }
     // ── 초기화 ─────────────────────────────────────────────────────────────
     _buildDecks() {
@@ -44,6 +46,8 @@ export class FreecellGame {
         this._history = [];
         this._moveCount = 0;
         this._gameNumber = gameNumber ?? 0;
+        // 이전 게임의 초기 배열이 새 스냅샷에 섞이지 않도록 먼저 비움
+        this._initialSnapshot = null;
         const init = new InitDeck(gameNumber);
         // 카드를 순서대로 태블로에 배분 (원본 Android 배분 방식 동일)
         for (let i = 0; i < 52; i++) {
@@ -354,7 +358,29 @@ export class FreecellGame {
             decks,
             history,
             gameNumber: this._gameNumber,
+            // 이어하기 후에도 "다시 하기"가 동작하도록 초기 배열을 함께 저장
+            initialDecks: this._initialSnapshot?.decks,
         };
+    }
+    /**
+     * 스냅샷 덱 데이터 검증: 유효한 무늬/숫자로 정확히 52장, 중복 없음
+     * 손상된 저장 데이터로 비정상 보드가 복원되는 것을 방지
+     */
+    static _validateDecks(decks) {
+        const seen = new Set();
+        for (const deckData of decks) {
+            for (const c of deckData.cards) {
+                if (c.figure < 1 || c.figure > 4)
+                    return false;
+                if (c.number < 1 || c.number > 13)
+                    return false;
+                const key = c.figure * 100 + c.number;
+                if (seen.has(key))
+                    return false;
+                seen.add(key);
+            }
+        }
+        return seen.size === 52;
     }
     /**
      * 스냅샷에서 게임 상태 복원
@@ -362,6 +388,11 @@ export class FreecellGame {
      */
     restore(snapshot) {
         try {
+            // 손상된 스냅샷(카드 수/중복/범위 오류) 거부
+            if (!FreecellGame._validateDecks(snapshot.decks)) {
+                this.reset();
+                return null;
+            }
             // 덱 복원
             this._buildDecks();
             for (let i = 0; i < Math.min(snapshot.decks.length, TOTAL_DECKS); i++) {
@@ -383,6 +414,26 @@ export class FreecellGame {
             this._moveCount = snapshot.moveCount;
             this._state = snapshot.gameState === 'pause' ? 'pause' : 'play';
             this._gameNumber = snapshot.gameNumber ?? 0;
+            // 초기 배열 복원 (이어하기 후 "다시 하기" 지원)
+            if (snapshot.initialDecks && FreecellGame._validateDecks(snapshot.initialDecks)) {
+                this._initialSnapshot = {
+                    version: 1,
+                    savedAt: snapshot.savedAt,
+                    gameState: 'play',
+                    moveCount: 0,
+                    elapsed: 0,
+                    decks: snapshot.initialDecks,
+                    history: [],
+                    gameNumber: snapshot.gameNumber ?? 0,
+                };
+            }
+            else if (this._gameNumber > 0) {
+                // v1 저장본에 초기 배열이 없어도 게임 번호가 있으면 동일 딜로 재구성 가능
+                const tmp = new FreecellGame();
+                tmp.deal(this._gameNumber);
+                this._initialSnapshot = tmp.serialize(0);
+            }
+            // 둘 다 불가능하면 기존 _initialSnapshot 유지 (restart() 경로에서는 이미 올바른 값)
             return snapshot.elapsed;
         }
         catch {

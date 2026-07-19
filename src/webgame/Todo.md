@@ -18,7 +18,88 @@
 
 ---
 
-## 수정 완료 (2026-07-19)
+## 수정 완료 (2026-07-19, 2차)
+아래 2차 코드 리뷰의 모든 항목(P1~P3 버그, 음소거 버튼, 테스트 보강)을 수정 완료.
+- 테스트: 94개 → 100개 통과 (`node test.mjs`)
+- 릴리스 재빌드 완료 (`bash build.sh` → `release/index.html`)
+- P1 수정 방식: `GameSnapshot.initialDecks`(옵션 필드)로 초기 배열을 함께 저장하고
+  `restore()`에서 `_initialSnapshot` 재구성 (필드가 없는 구버전 저장본은
+  `gameNumber > 0`일 때 동일 딜로 재구성 — 스키마 버전 유지로 기존 저장본 호환).
+  `_doRestart()`는 `canRestart` 확인 후에만 이펙트/리셋 진행.
+- 데드 코드 중 `toggleMute()`는 삭제 대신 음소거 버튼(🔊/🔇)으로 UI 연결.
+
+## 코드 리뷰 결과 (2026-07-19, 2차)
+1차 리뷰 수정 완료 후 전체 소스(src/ 8개 파일) 재검토. 테스트 94/94 통과 확인.
+
+### 버그 (우선순위순)
+
+#### P1 — 기능 파손
+- [x] **이어하기 후 "다시 하기"가 조용히 실패 + 저장 데이터 삭제** (Node 재현 확인됨):
+      `FreecellGame._initialSnapshot`은 `deal()`에서만 설정되고 `restore()`
+      (`src/freecell.ts:413`)는 복원하지 않음 → 저장 게임을 이어한 세션에서
+      `restart()`(`src/freecell.ts:104`)가 항상 `false` 반환.
+      그런데 `_doRestart()`(`src/main.ts:389`)는 반환값을 무시하고 실패 이펙트 재생 후
+      `elapsed = 0` 리셋, `storage.clear()`까지 실행 → 보드는 그대로인데 타이머가 0이 되고
+      자동저장이 삭제됨.
+      수정: ① 초기 배열을 스냅샷에 포함(`GameSnapshot`에 `initialDecks` 필드 추가, 스키마 v2)
+      하거나 `gameNumber > 0`이면 `deal(gameNumber)`로 재구성(랜덤 게임은 ①만 가능),
+      ② `_doRestart()`에서 `restart()` 실패 시 이펙트/리셋을 중단하고 안내.
+
+#### P2 — 입력/UX
+- [x] **승리 애니메이션·오버레이가 새 게임 위로 누출**: `_onWin()`(`src/main.ts:529`)의
+      `showWhenDone` setTimeout 체인이 취소 불가능하고, renderer에 승리 애니메이션 중단
+      API가 없음. 승리 직후(오버레이 뜨기 전) `N` 키로 새 게임을 시작하면 새 보드 위로
+      옛 카드들이 계속 날아다니고, 애니메이션 종료 시 승리 오버레이가 새 게임 중에 표시됨.
+      수정: `_onWin`의 타이머 ID를 보관해 `_newGame()`/`_doRestart()`에서 취소하고,
+      `Renderer`에 `stopEffects()`(win/fail 카드·스파크 배열 초기화)를 추가해 함께 호출.
+- [x] **키보드 `N`으로 첫 게임 시작 시 게임 전체가 무음**: `sound.init()`이 시작/이어하기
+      버튼 클릭 핸들러(`src/main.ts:124-131`)에서만 호출됨. 시작 화면에서 `N` 키 →
+      `_requestNewGame()` → `_newGame()` 경로는 init을 거치지 않고 이후 재호출 지점이
+      없어 `play()`가 `!this._initialized`로 전부 조기 반환 → 세션 내내 소리 없음.
+      수정: `_newGame()`·`_continueGame()` 진입부에서 `this.sound.init()` 호출
+      (키 입력도 사용자 제스처이므로 자동재생 정책 문제 없음).
+- [x] **자동 완료 중 Undo 미차단**: `_undo()`(`src/main.ts:431`)가 `_autoCompleting`을
+      확인하지 않음 — 자동 완료 진행 중 Z 키/버튼으로 undo하면 다음 tick(120ms)이
+      즉시 같은 수를 다시 실행해 undo가 무효화되고 moveCount만 증가. Undo 버튼도
+      활성 상태로 유지됨. 수정: `_undo()` 진입부에 `if (this._autoCompleting) return;`
+      추가(또는 undo 시 `_stopAutoComplete()` 호출).
+
+#### P3 — 잠재 결함/정리
+- [x] **승리 상태 undo로 상태 불일치**: `undo()`(`src/freecell.ts:188`)가 `'win'` 상태를
+      허용하고 `_undo()`(`src/main.ts:431`)에 가드가 없음 — 승리 애니메이션 중 Z를 누르면
+      state가 `play`로 돌아가지만 타이머는 정지, 저장은 이미 삭제된 채 플레이가 계속되고
+      예약된 승리 오버레이도 나중에 표시됨. 수정: `_undo()`에서 `state === 'play'`일 때만
+      허용하거나, win 진입 시점에 undo 버튼 비활성.
+- [x] **`lose` 사운드 데드 코드**: `_makeLose()`(`src/sound.ts:140`)로 버퍼는 생성되지만
+      `play('lose')` 호출이 코드 전체에 없음 — 실패 이펙트 시작 시(`_doRestart`,
+      `src/main.ts:395`) 재생하는 것이 원래 의도로 보임.
+- [x] **"다시 하기 (R)" 툴팁 오류**: `index.html:36`의 `title="다시 하기 (R)"`이지만
+      `R` 키는 Foundation4 선택 키(`src/input.ts:41` `DECK_KEYS`)이고 재시작 단축키는
+      존재하지 않음. 툴팁 수정 또는 다른 키(예: `Ctrl+R` 제외한 미사용 키) 배정.
+- [x] **애니메이션이 프레임레이트 의존**: `_stepWinAnim`/`_stepFailAnim`
+      (`src/renderer.ts:686,826`)이 rAF 콜백마다 `elapsed += 0.016` 고정 증분과 고정
+      속도 적분을 사용 — 120Hz 디스플레이에서 2배속, 저사양 기기에서 슬로모션.
+      `performance.now()` 기반 delta time으로 변경 권장.
+- [x] **`restore()` 스냅샷 검증 부재**: `src/freecell.ts:413`이 카드 총수(52장)·중복
+      여부를 검증하지 않고 저장 데이터를 신뢰 — 손상된 IndexedDB 데이터로 비정상 보드
+      복원 가능(try/catch는 예외만 잡음). 카드 수/중복 검증 후 실패 시 null 반환 권장.
+- [x] **데드 코드/미사용 정리**: `drawDropHint`(`src/renderer.ts:485`) 미호출,
+      `GameStorage.hasSave()`(`src/storage.ts:119`) 미사용,
+      `SoundManager.toggleMute()/muted`(`src/sound.ts:28-32`) 미사용,
+      `DECK_KEY_LABELS`(`src/input.ts:29`)와 `KEY_LABELS`(`src/renderer.ts:12`) 중복 정의.
+
+### 기능 추가 후보
+- [x] **음소거 버튼**: `SoundManager.toggleMute()`가 이미 구현되어 있으나 UI가 없음 —
+      헤더 버튼 그룹에 🔊/🔇 토글 추가만 하면 됨.
+
+### 테스트 보강
+- [x] restore 후 restart 회귀 테스트 (P1 수정과 함께): 스냅샷 복원 → `restart()`가
+      `true`를 반환하고 초기 배열·moveCount 0으로 돌아가는지 검증
+- [x] `restore()` 손상 스냅샷(카드 51장/중복) 거부 테스트
+
+---
+
+## 수정 완료 (2026-07-19, 1차)
 아래 코드 리뷰의 모든 항목(P1~P3 버그, 기능 추가, 테스트 보강)을 수정 완료.
 - 테스트: 87개 → 94개 통과 (`node test.mjs`)
 - 릴리스 재빌드 완료 (`bash build.sh` → `release/index.html`)
@@ -26,7 +107,7 @@
 - 추가로 발견·수정: Foundation으로 보낸 카드가 undo로 회수되지 않던 버그
   (`removeTopRaw()` 도입으로 Foundation 잠금을 우회해 회수)
 
-## 코드 리뷰 결과 (2026-07-19)
+## 코드 리뷰 결과 (2026-07-19, 1차)
 
 ### 요구사항 구현 현황
 - [x] 1~12번 요구사항 모두 구현 완료 (Canvas 렌더링, 반응형 레이아웃, 키보드/마우스/터치,

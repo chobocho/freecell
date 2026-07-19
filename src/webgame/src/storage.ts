@@ -32,6 +32,8 @@ export interface GameSnapshot {
   decks:      SavedDeck[];
   history:    SavedMove[];
   gameNumber: number;   // 0 = 랜덤, 1~32000 = MS FreeCell 게임 번호
+  /** deal() 직후의 초기 배열 (이어하기 후 "다시 하기"용, v1 저장본에는 없을 수 있음) */
+  initialDecks?: SavedDeck[];
 }
 
 // ─── 상수 ──────────────────────────────────────────────────────────────────
@@ -113,12 +115,6 @@ export class GameStorage {
       req.onsuccess = () => resolve();
       req.onerror   = () => resolve();
     });
-  }
-
-  /** 저장 데이터가 있는지 확인 */
-  async hasSave(): Promise<boolean> {
-    const snap = await this.load();
-    return snap !== null;
   }
 }
 

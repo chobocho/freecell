@@ -46,6 +46,11 @@ class GameController {
   private _toastTimer: number = 0;
   private elSaveToast!: HTMLElement;
 
+  /** 승리 애니메이션 종료 대기 타이머 (새 게임 시작 시 취소해야 함) */
+  private _winOverlayTimer: number = 0;
+  /** 실패 이펙트 종료 대기 폴링 타이머 (새 게임 시작 시 취소해야 함) */
+  private _restartPollTimer: number = 0;
+
   // 확인 팝업 관련 상태
   private _confirmFromPause = false;
   private _confirmAction: 'newgame' | 'restart' = 'newgame';
@@ -119,6 +124,14 @@ class GameController {
     document.getElementById('btn-restart')!.addEventListener('click', () => this._requestRestart());
     this.elUndoBtn.addEventListener('click', () => this._undo());
     this.elPauseBtn.addEventListener('click', () => this._togglePause());
+
+    // 음소거 토글
+    const muteBtn = document.getElementById('btn-mute') as HTMLButtonElement;
+    muteBtn.addEventListener('click', () => {
+      this.sound.toggleMute();
+      muteBtn.textContent = this.sound.muted ? '🔇' : '🔊';
+      muteBtn.title       = this.sound.muted ? '소리 켜기' : '소리 끄기';
+    });
 
     // 시작 화면
     document.getElementById('overlay-start-btn')!.addEventListener('click', async () => {
@@ -221,7 +234,11 @@ class GameController {
     const snap = await this.storage.load();
     if (!snap) { this._newGame(); return; }
 
+    this.sound.init();
     this._stopTimer();
+    this._cancelWinOverlayTimer();
+    this._cancelRestartPoll();
+    this.renderer.stopEffects();
     const restoredElapsed = this.game.restore(snap);
     if (restoredElapsed === null) {
       // 복원 실패 → 새 게임
@@ -387,17 +404,27 @@ class GameController {
 
   /** 실패 이펙트 후 동일 배열로 재시작 */
   private _doRestart(): void {
+    // 초기 배열을 모를 때는 이펙트/리셋 없이 게임 재개 (저장 데이터 보호)
+    if (!this.game.canRestart) {
+      this.game.resume();
+      this._startTimer();
+      this.elPauseBtn.textContent = '⏸ 일시정지';
+      return;
+    }
+
     this._stopTimer();
+    this._cancelWinOverlayTimer();
     this.elPauseBtn.textContent = '⏸ 일시정지';
     this._hideAllOverlays();
 
     // 실패 이펙트 시작 (현재 카드 배치에서 불타며 날아감)
+    this.sound.play('lose');
     this.renderer.startFailEffect(this.game);
 
     // 애니메이션 완료 후 동일 배열로 재시작
-    const poll = window.setInterval(() => {
+    this._restartPollTimer = window.setInterval(() => {
       if (!this.renderer.isFailAnimating) {
-        clearInterval(poll);
+        this._cancelRestartPoll();
         this.game.restart();
         this.elapsed = 0;
         this._startTimer();
@@ -408,8 +435,20 @@ class GameController {
     }, 100);
   }
 
+  private _cancelRestartPoll(): void {
+    if (this._restartPollTimer) {
+      clearInterval(this._restartPollTimer);
+      this._restartPollTimer = 0;
+    }
+  }
+
   private _newGame(gameNumber?: number): void {
+    // 키보드(N)로 시작하는 경로에서도 사운드가 초기화되도록 보장 (버튼 클릭 없이 진입 가능)
+    this.sound.init();
     this._stopTimer();
+    this._cancelWinOverlayTimer();
+    this._cancelRestartPoll();
+    this.renderer.stopEffects();
     this.storage.clear();
     this.game.deal(gameNumber);
     this.elapsed = 0;
@@ -429,6 +468,10 @@ class GameController {
   }
 
   private _undo(): void {
+    // 자동 완료 중 undo는 다음 tick이 즉시 같은 수를 재실행해 무효화되므로 차단
+    if (this._autoCompleting) return;
+    // 승리 애니메이션 중 undo는 타이머/저장/오버레이와 상태가 어긋나므로 play 상태에서만 허용
+    if (this.game.state !== 'play') return;
     if (!this.game.canUndo) return;
     this.game.undo();
     this.sound.play('card_flip');
@@ -539,19 +582,28 @@ class GameController {
     const startedAt = Date.now();
     const showWhenDone = () => {
       if (!this.renderer.isAnimating || Date.now() - startedAt > 12000) {
+        this._winOverlayTimer = 0;
         this.winOverlay.classList.remove('hidden');
       } else {
-        setTimeout(showWhenDone, 250);
+        this._winOverlayTimer = window.setTimeout(showWhenDone, 250);
       }
     };
-    setTimeout(showWhenDone, 1500);
+    this._winOverlayTimer = window.setTimeout(showWhenDone, 1500);
+  }
+
+  /** 예약된 승리 오버레이 표시 타이머 취소 (승리 직후 새 게임 시작 시 누출 방지) */
+  private _cancelWinOverlayTimer(): void {
+    if (this._winOverlayTimer) {
+      clearTimeout(this._winOverlayTimer);
+      this._winOverlayTimer = 0;
+    }
   }
 
   // ── UI 업데이트 ─────────────────────────────────────────────────────────
 
   private _updateUI(): void {
     this.elMoves.textContent = String(this.game.moveCount);
-    this.elUndoBtn.disabled  = !this.game.canUndo;
+    this.elUndoBtn.disabled  = !this.game.canUndo || this.game.state === 'win';
   }
 
   private _hideAllOverlays(): void {

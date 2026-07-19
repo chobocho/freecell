@@ -26,17 +26,6 @@ export type { KeyboardSelectState } from './renderer.js';
 //   FreeCell(우상단):   U I O P
 //   Tableau(하단):      1 2 3 4 5 6 7 8
 
-export const DECK_KEY_LABELS: Record<DeckIndex, string> = {
-  [DeckIndex.Found1]: 'Q', [DeckIndex.Found2]: 'W',
-  [DeckIndex.Found3]: 'E', [DeckIndex.Found4]: 'R',
-  [DeckIndex.Free1]:  'U', [DeckIndex.Free2]:  'I',
-  [DeckIndex.Free3]:  'O', [DeckIndex.Free4]:  'P',
-  [DeckIndex.Tableau1]: '1', [DeckIndex.Tableau2]: '2',
-  [DeckIndex.Tableau3]: '3', [DeckIndex.Tableau4]: '4',
-  [DeckIndex.Tableau5]: '5', [DeckIndex.Tableau6]: '6',
-  [DeckIndex.Tableau7]: '7', [DeckIndex.Tableau8]: '8',
-};
-
 const DECK_KEYS: Record<string, DeckIndex> = {
   'q': DeckIndex.Found1, 'w': DeckIndex.Found2,
   'e': DeckIndex.Found3, 'r': DeckIndex.Found4,

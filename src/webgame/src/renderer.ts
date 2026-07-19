@@ -133,6 +133,8 @@ export class Renderer {
   private _winAnimActive: boolean  = false;
   /** 실패 이펙트 진행 중 (보드 숨김 + 폴링용) */
   private _failAnimating: boolean  = false;
+  /** delta time 계산용 직전 프레임 시각 (ms) — 0이면 다음 프레임에서 기준만 잡음 */
+  private _lastFrameTime: number = 0;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
@@ -231,8 +233,16 @@ export class Renderer {
     }
 
     // 이펙트 — 승리/실패 각각 독립 실행
-    if (this._winAnimActive)  this._stepWinAnim();
-    if (this._failAnimating)  this._stepFailAnim();
+    // 물리 계수가 60fps 기준으로 튜닝되어 있어 delta time으로 정규화 (120Hz 2배속/저사양 슬로모션 방지)
+    const now = performance.now();
+    const dt  = this._lastFrameTime > 0
+      ? Math.min((now - this._lastFrameTime) / 1000, 0.05)
+      : 1 / 60;
+    this._lastFrameTime = now;
+    const f = dt * 60; // 60fps 기준 프레임 배율
+
+    if (this._winAnimActive)  this._stepWinAnim(dt, f);
+    if (this._failAnimating)  this._stepFailAnim(dt, f);
   }
 
   // ── 배경 ─────────────────────────────────────────────────────────────────
@@ -479,24 +489,6 @@ export class Renderer {
     ctx.closePath();
   }
 
-  // ── 힌트 표시 ────────────────────────────────────────────────────────────
-
-  /** 유효한 드롭 대상 슬롯 강조 */
-  drawDropHint(deckIdx: DeckIndex, game: FreecellGame): void {
-    const { ctx } = this;
-    const { cardW, cardH } = this.layout;
-    const rect = this.getCardRect(deckIdx, 0, game);
-
-    ctx.save();
-    ctx.beginPath();
-    this._roundRect(rect.x, rect.y, cardW, cardH, 6);
-    ctx.strokeStyle = 'rgba(255, 220, 0, 0.9)';
-    ctx.lineWidth   = 3;
-    ctx.setLineDash([6, 3]);
-    ctx.stroke();
-    ctx.restore();
-  }
-
   // ── 키보드 선택 하이라이트 ───────────────────────────────────────────────
 
   /** 키보드로 선택된 소스 덱에 황금 테두리 표시 */
@@ -683,7 +675,7 @@ export class Renderer {
     this._winAnimActive = true;
   }
 
-  private _stepWinAnim(): void {
+  private _stepWinAnim(dt: number, f: number): void {
     const { ctx } = this;
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
@@ -692,7 +684,7 @@ export class Renderer {
     // 1) 아직 발사 전인 카드는 제자리에 표시 — 배열 역순 = 아래 카드부터 그려서 z순서 유지
     for (let i = this._winAnimCards.length - 1; i >= 0; i--) {
       const c = this._winAnimCards[i];
-      c.elapsed += 0.016;
+      c.elapsed += dt;
       if (c.elapsed < c.delay && !c.done) {
         this._drawCard(c.card, c.x, c.y, true);
       }
@@ -702,10 +694,10 @@ export class Renderer {
     for (const c of this._winAnimCards) {
       if (c.done || c.elapsed < c.delay) continue;
 
-      c.vy    += G;
-      c.x     += c.vx;
-      c.y     += c.vy;
-      c.angle += c.vAngle;
+      c.vy    += G * f;
+      c.x     += c.vx * f;
+      c.y     += c.vy * f;
+      c.angle += c.vAngle * f;
 
       // 바닥 바운스 — 튕길 때마다 힘이 줄고 스파크가 튐
       if (c.y + c.h > H && c.vy > 0) {
@@ -747,12 +739,12 @@ export class Renderer {
       ctx.restore();
 
       // 비행 중 금빛 반짝이
-      if (Math.random() < 0.25) {
+      if (Math.random() < 0.25 * f) {
         this._emitSparks(c.x + Math.random() * c.w, c.y + Math.random() * c.h, 1, 0);
       }
     }
 
-    this._stepSparks();
+    this._stepSparks(f);
 
     const allDone = this._winAnimCards.every(c => c.done) && this._winSparks.length === 0;
     if (allDone) this._winAnimActive = false;
@@ -774,15 +766,15 @@ export class Renderer {
     }
   }
 
-  private _stepSparks(): void {
+  private _stepSparks(f: number): void {
     const { ctx } = this;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter'; // 겹칠수록 밝아지는 글로우
     for (const s of this._winSparks) {
-      s.vy   += 0.12;
-      s.x    += s.vx;
-      s.y    += s.vy;
-      s.life -= s.decay;
+      s.vy   += 0.12 * f;
+      s.x    += s.vx * f;
+      s.y    += s.vy * f;
+      s.life -= s.decay * f;
       if (s.life <= 0) continue;
       ctx.globalAlpha = s.life;
       ctx.fillStyle = `hsl(${s.hue}, 100%, ${55 + s.life * 30}%)`;
@@ -823,26 +815,26 @@ export class Renderer {
     }
   }
 
-  private _stepFailAnim(): void {
+  private _stepFailAnim(dt: number, f: number): void {
     const { ctx } = this;
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
 
     for (const c of this._failAnimCards) {
-      c.elapsed += 0.016;
+      c.elapsed += dt;
       if (c.elapsed < c.delay) continue;
 
-      c.vx    *= 0.99;
-      c.vy    += 0.15; // 약한 중력
-      c.x     += c.vx;
-      c.y     += c.vy;
-      c.angle += c.vAngle;
-      c.firePhase += 0.1;
+      c.vx    *= Math.pow(0.99, f);
+      c.vy    += 0.15 * f; // 약한 중력
+      c.x     += c.vx * f;
+      c.y     += c.vy * f;
+      c.angle += c.vAngle * f;
+      c.firePhase += 0.1 * f;
 
       if (c.x > W + 100 || c.x < -100 || c.y > H + 100) {
         c.alpha = 0; continue;
       }
-      c.alpha = Math.max(0, c.alpha - 0.008);
+      c.alpha = Math.max(0, c.alpha - 0.008 * f);
 
       ctx.save();
       ctx.globalAlpha = c.alpha;
@@ -881,6 +873,15 @@ export class Renderer {
       ctx.fillStyle = col;
       ctx.fill();
     }
+  }
+
+  /** 진행 중인 모든 이펙트 즉시 중단 (새 게임/이어하기 시 이전 애니메이션 누출 방지) */
+  stopEffects(): void {
+    this._winAnimCards  = [];
+    this._winSparks     = [];
+    this._failAnimCards = [];
+    this._winAnimActive = false;
+    this._failAnimating = false;
   }
 
   get isAnimating(): boolean { return this._winAnimActive || this._failAnimating; }
