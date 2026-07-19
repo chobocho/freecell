@@ -1,4 +1,4 @@
-import { DeckIndex } from './deck.js';
+import { DeckIndex, TableauDeck } from './deck.js';
 import { FreecellGame } from './freecell.js';
 import { Renderer, DragState, KeyboardSelectState } from './renderer.js';
 
@@ -11,6 +11,10 @@ export interface InputCallbacks {
   onHelp():      void;
   onMoveCard(from: DeckIndex, to: DeckIndex, count: number): boolean;
   onAutoMove(from: DeckIndex): void;
+  /** 도움말 오버레이가 열려 있는지 (Esc/F1로만 닫도록 게임 키 차단) */
+  isHelpOpen(): boolean;
+  /** 확인/게임번호 등 모달이 열려 게임 단축키를 차단해야 하는지 */
+  isModalBlocking(): boolean;
 }
 
 // KeyboardSelectState는 renderer.ts에서 export (순환 참조 방지)
@@ -141,10 +145,13 @@ export class InputHandler {
       e.preventDefault();
       const t = e.changedTouches[0];
       this._onRelease(t.clientX, t.clientY);
+      // 터치 종료 후 캐시한 rect 해제 — 이후 마우스 이벤트가 낡은 rect를 쓰지 않도록
+      this._canvasRect = null;
     }, { passive: false });
 
     this.canvas.addEventListener('touchcancel', () => {
       if (this.drag.isDragging) this._cancelDrag();
+      this._canvasRect = null;
     });
   }
 
@@ -160,6 +167,18 @@ export class InputHandler {
         this._kbState.ctrlHeld = true;
         return;
       }
+
+      // 도움말이 열려 있으면 Esc/F1로 닫기만 허용, 그 외 게임 키는 차단
+      if (this.cb.isHelpOpen()) {
+        if (e.key === 'Escape' || e.key === 'F1') {
+          e.preventDefault();
+          this.cb.onHelp();
+        }
+        return;
+      }
+
+      // 확인/게임번호 등 모달 표시 중에는 게임 단축키 차단 (모달 뒤 게임이 재개되는 것 방지)
+      if (this.cb.isModalBlocking()) return;
 
       // 덱 선택 키 (Ctrl/Meta/Alt 없을 때만)
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -257,12 +276,16 @@ export class InputHandler {
     // 목적지가 FreeCell / Foundation: 항상 1장 (규칙상 1장만 허용)
     if (to >= DeckIndex.Free1 && to <= DeckIndex.Free4) return 1;
     if (to >= DeckIndex.Found1 && to <= DeckIndex.Found4) return 1;
-    // Tableau → Tableau: 이동 가능 최대 수
+    // Tableau → Tableau: 맨 위 연속 시퀀스 길이와 이동 가능 최대치 중 작은 값에서 시작,
+    // 목적지가 실제로 받을 수 있는 count까지 감소 탐색 (유효한 이동을 거부하지 않도록)
     const maxCount = this.game.maxMovableCount(
       this.game.emptyFreeCellCount(),
       this.game.emptyTableauCount(to),
     );
-    return Math.min(deck.size(), maxCount);
+    const seqLen = deck instanceof TableauDeck ? deck.sequenceLength() : deck.size();
+    let count = Math.min(seqLen, maxCount);
+    while (count > 1 && !this.game.canMove(from, to, count)) count--;
+    return count;
   }
 
   // ── 공통 처리 ────────────────────────────────────────────────────────────
@@ -381,7 +404,9 @@ export class InputHandler {
         const cardBottom = ci === deck.size() - 1
           ? cardY + cardH
           : positions[ci + 1]; // 다음 카드가 아래 카드를 가림
-        if (y >= cardY && y <= Math.max(cardBottom, cardY + 30)) {
+        // 최소 터치 밴드는 카드 높이를 넘지 않도록 제한 (초소형 카드에서 바깥 클릭 오탐 방지)
+        const minBand = Math.min(30, cardH);
+        if (y >= cardY && y <= Math.max(cardBottom, cardY + minBand)) {
           return { deckIdx: i as DeckIndex, cardIdx: ci };
         }
       }

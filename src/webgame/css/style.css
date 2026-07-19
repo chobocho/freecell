@@ -278,6 +278,15 @@ html, body {
   letter-spacing: 0.03em;
 }
 
+.game-number-error {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #ff8a80;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.game-number-error.hidden { display: none; }
+
 /* ─── 이어하기 버튼 ──────────────────────────────────────── */
 .btn-continue {
   background: #1565c0;

@@ -66,6 +66,7 @@ export class Renderer {
         this.images = new Map();
         // 애니메이션 — 승리/실패를 분리해 서로 간섭하지 않도록 함
         this._winAnimCards = [];
+        this._winSparks = [];
         this._failAnimCards = [];
         this._winAnimActive = false;
         /** 실패 이펙트 진행 중 (보드 숨김 + 폴링용) */
@@ -131,7 +132,8 @@ export class Renderer {
         this._drawBackground(W, H);
         // 실패 이펙트 중에는 보드를 숨김 (카드가 제자리에서 날아가는 효과)
         if (!this._failAnimating) {
-            this._drawFoundations(game, drag);
+            // 승리 이펙트 중에는 파운데이션 카드를 애니메이션 쪽에서 그림 (슬롯만 표시)
+            this._drawFoundations(game, drag, this._winAnimActive);
             this._drawFreeCells(game, drag);
             this._drawTableaus(game, drag);
             if (drag.isDragging) {
@@ -159,7 +161,7 @@ export class Renderer {
         ctx.fillRect(0, 0, W, H);
     }
     // ── Foundation 덱 ────────────────────────────────────────────────────────
-    _drawFoundations(game, drag) {
+    _drawFoundations(game, drag, slotOnly = false) {
         for (let i = DeckIndex.Found1; i <= DeckIndex.Found4; i++) {
             const deckIdx = i;
             const deck = game.getDeck(deckIdx);
@@ -167,7 +169,7 @@ export class Renderer {
             const x = this.layout.foundX[col];
             const y = this.layout.topRowY;
             this._drawDeckSlot(x, y, 'foundation', col);
-            if (!deck.isEmpty()) {
+            if (!deck.isEmpty() && !slotOnly) {
                 const isDragSrc = drag.isDragging && drag.fromDeck === deckIdx;
                 if (!isDragSrc) {
                     this._drawCard(deck.top(), x, y);
@@ -508,57 +510,140 @@ export class Renderer {
     // ── 승리 이펙트 ──────────────────────────────────────────────────────────
     startWinEffect(game) {
         this._winAnimCards = [];
+        this._winSparks = [];
         const { cardW, cardH } = this.layout;
-        // 모든 Foundation 카드를 날리기
-        for (let di = DeckIndex.Found1; di <= DeckIndex.Found4; di++) {
-            const deck = game.getDeck(di);
-            for (let ci = 0; ci < deck.size(); ci++) {
+        // 파운데이션 맨 위 카드부터 네 덱을 번갈아 순차 발사 (클래식 캐스케이드)
+        let order = 0;
+        for (let layer = 0; layer < 13; layer++) {
+            for (let di = DeckIndex.Found1; di <= DeckIndex.Found4; di++) {
+                const deck = game.getDeck(di);
+                const ci = deck.size() - 1 - layer;
+                if (ci < 0)
+                    continue;
                 const rect = this.getCardRect(di, ci, game);
-                const delay = Math.random() * 0.6;
+                const dir = Math.random() < 0.5 ? -1 : 1;
                 this._winAnimCards.push({
                     card: deck.get(ci),
                     x: rect.x, y: rect.y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: -(Math.random() * 10 + 5),
+                    vx: dir * (2.5 + Math.random() * 4.5),
+                    vy: -(4 + Math.random() * 6),
                     angle: 0,
-                    vAngle: (Math.random() - 0.5) * 0.2,
+                    vAngle: dir * (0.04 + Math.random() * 0.1),
                     alpha: 1,
-                    delay,
+                    delay: order * 0.09,
                     elapsed: 0,
                     w: cardW, h: cardH,
+                    bounces: 0,
+                    done: false,
+                    trail: [],
                 });
+                order++;
             }
         }
         this._winAnimActive = true;
     }
     _stepWinAnim() {
         const { ctx } = this;
+        const W = this.canvas.clientWidth;
         const H = this.canvas.clientHeight;
-        const G = 0.4; // 중력
-        for (const c of this._winAnimCards) {
+        const G = 0.45; // 중력
+        // 1) 아직 발사 전인 카드는 제자리에 표시 — 배열 역순 = 아래 카드부터 그려서 z순서 유지
+        for (let i = this._winAnimCards.length - 1; i >= 0; i--) {
+            const c = this._winAnimCards[i];
             c.elapsed += 0.016;
-            if (c.elapsed < c.delay)
+            if (c.elapsed < c.delay && !c.done) {
+                this._drawCard(c.card, c.x, c.y, true);
+            }
+        }
+        // 2) 발사된 카드: 물리 + 바닥 바운스 + 잔상 + 스파크
+        for (const c of this._winAnimCards) {
+            if (c.done || c.elapsed < c.delay)
                 continue;
             c.vy += G;
             c.x += c.vx;
             c.y += c.vy;
             c.angle += c.vAngle;
-            if (c.y > H + 50) {
+            // 바닥 바운스 — 튕길 때마다 힘이 줄고 스파크가 튐
+            if (c.y + c.h > H && c.vy > 0) {
+                c.y = H - c.h;
+                c.vy = -c.vy * (0.6 + Math.random() * 0.15);
+                c.vAngle *= 0.8;
+                c.bounces++;
+                this._emitSparks(c.x + c.w / 2, H - 4, 6 + Math.floor(Math.random() * 5), -Math.abs(c.vy));
+                // 더 못 튀면 수평으로 가속해 화면 밖으로 굴러가게
+                if (c.bounces >= 4 || Math.abs(c.vy) < 3)
+                    c.vx *= 1.2;
+            }
+            // 화면 밖으로 나가면 종료
+            if (c.x > W + c.w || c.x < -c.w * 2 || c.y > H + c.h * 2) {
+                c.done = true;
                 c.alpha = 0;
                 continue;
             }
-            if (c.y > H * 0.7)
-                c.alpha = Math.max(0, 1 - (c.y - H * 0.7) / (H * 0.3));
+            // 잔상 기록
+            c.trail.push({ x: c.x, y: c.y, angle: c.angle });
+            if (c.trail.length > 9)
+                c.trail.shift();
+            // 잔상 → 본체 순으로 그림
+            for (let i = 0; i < c.trail.length - 1; i += 2) {
+                const t = c.trail[i];
+                ctx.save();
+                ctx.globalAlpha = 0.25 * ((i + 1) / c.trail.length);
+                ctx.translate(t.x + c.w / 2, t.y + c.h / 2);
+                ctx.rotate(t.angle);
+                this._drawCard(c.card, -c.w / 2, -c.h / 2, true);
+                ctx.restore();
+            }
             ctx.save();
-            ctx.globalAlpha = c.alpha;
             ctx.translate(c.x + c.w / 2, c.y + c.h / 2);
             ctx.rotate(c.angle);
             this._drawCard(c.card, -c.w / 2, -c.h / 2, true);
             ctx.restore();
+            // 비행 중 금빛 반짝이
+            if (Math.random() < 0.25) {
+                this._emitSparks(c.x + Math.random() * c.w, c.y + Math.random() * c.h, 1, 0);
+            }
         }
-        const allDone = this._winAnimCards.every(c => c.alpha <= 0);
+        this._stepSparks();
+        const allDone = this._winAnimCards.every(c => c.done) && this._winSparks.length === 0;
         if (allDone)
             this._winAnimActive = false;
+    }
+    /** 금빛 스파크 파티클 방출 */
+    _emitSparks(x, y, count, baseVy) {
+        if (this._winSparks.length > 400)
+            return; // 파티클 수 상한
+        for (let i = 0; i < count; i++) {
+            this._winSparks.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 5,
+                vy: baseVy * 0.3 - Math.random() * 2,
+                life: 1,
+                decay: 0.02 + Math.random() * 0.03,
+                size: 1.5 + Math.random() * 2.5,
+                hue: 40 + Math.random() * 20, // 금색 계열
+            });
+        }
+    }
+    _stepSparks() {
+        const { ctx } = this;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter'; // 겹칠수록 밝아지는 글로우
+        for (const s of this._winSparks) {
+            s.vy += 0.12;
+            s.x += s.vx;
+            s.y += s.vy;
+            s.life -= s.decay;
+            if (s.life <= 0)
+                continue;
+            ctx.globalAlpha = s.life;
+            ctx.fillStyle = `hsl(${s.hue}, 100%, ${55 + s.life * 30}%)`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+        this._winSparks = this._winSparks.filter(s => s.life > 0);
     }
     // ── 패배 이펙트 (바람에 흩날리기) ────────────────────────────────────────
     startFailEffect(game) {
@@ -585,7 +670,6 @@ export class Renderer {
                 });
             }
         }
-        this._failAnimating = true; // already set above; keep explicit
     }
     _stepFailAnim() {
         const { ctx } = this;

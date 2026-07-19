@@ -109,8 +109,10 @@ export class FreecellGame {
             return false;
         // 실제 이동
         const moved = fromDeck.popMany(count);
+        // Tableau에서 카드를 뺀 직후 아래 카드가 자동 오픈되었으면 undo 시 다시 닫아야 함
+        const didOpenCard = fromDeck instanceof TableauDeck && fromDeck.didOpenTopOnLastPop();
         toDeck.pushMany(moved);
-        this._history.push({ from, to, count, didOpenCard: false });
+        this._history.push({ from, to, count, didOpenCard });
         this._moveCount++;
         // 승리 판정
         if (this._checkWin()) {
@@ -155,7 +157,12 @@ export class FreecellGame {
         const fromDeck = this._decks[cmd.from];
         const toDeck = this._decks[cmd.to];
         // 이동을 역으로: to → from
-        const cards = toDeck.popMany(cmd.count);
+        // removeTopRaw: Foundation 잠금·Tableau 자동 오픈을 무시하고 원본 그대로 회수
+        const cards = toDeck.removeTopRaw(cmd.count);
+        // 이동 당시 자동 오픈된 카드가 있었으면, 카드를 되돌리기 전에 다시 닫음
+        if (cmd.didOpenCard && fromDeck instanceof TableauDeck) {
+            fromDeck.closeTopIfNeeded();
+        }
         fromDeck.pushMany(cards);
         if (this._state === 'win') {
             this._state = 'play';
@@ -190,6 +197,41 @@ export class FreecellGame {
             }
         }
         return null;
+    }
+    // ── 자동 완료 ───────────────────────────────────────────────────────────
+    /**
+     * 남은 모든 카드를 Foundation으로 순서대로 올려 게임을 끝낼 수 있는 상태인지 판정.
+     * 현재 상태를 복제해 탐욕적으로 Foundation 이동을 반복했을 때 승리에 도달하면 true.
+     * (판정만 수행 — 실제 보드는 변경하지 않음)
+     */
+    canAutoComplete() {
+        if (this._state !== 'play')
+            return false;
+        const sim = new FreecellGame();
+        if (sim.restore(this.serialize(0)) === null)
+            return false;
+        sim._greedyToFoundation();
+        return sim._checkWin();
+    }
+    /**
+     * 탐욕적으로 가능한 모든 카드를 Foundation으로 이동 (더 이상 이동 없을 때까지 반복).
+     * @returns 이번 호출로 이동이 한 번이라도 일어났는지
+     */
+    _greedyToFoundation() {
+        let anyMove = false;
+        let moved = true;
+        while (moved) {
+            moved = false;
+            for (let i = DeckIndex.Free1; i <= DeckIndex.Tableau8; i++) {
+                if (this._isFoundation(i))
+                    continue;
+                if (this.autoMoveToFoundation(i) !== null) {
+                    moved = true;
+                    anyMove = true;
+                }
+            }
+        }
+        return anyMove;
     }
     // ── 공간 계산 ───────────────────────────────────────────────────────────
     /** 비어있는 FreeCell 수 */

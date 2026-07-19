@@ -72,6 +72,15 @@ export abstract class Deck {
     return this._cards.splice(this._cards.length - n, n);
   }
 
+  /**
+   * undo 전용: 게임 규칙(Foundation 잠금 · Tableau 자동 오픈)을 무시하고
+   * 맨 위 n장을 원본 그대로 제거해 반환 (바닥→위 순서)
+   */
+  removeTopRaw(n: number): Card[] {
+    if (n > this._cards.length) return [];
+    return this._cards.splice(this._cards.length - n, n);
+  }
+
   /** 배열의 카드들을 순서대로 push (배열 첫 번째가 먼저 쌓임) */
   pushMany(cards: Card[]): void {
     for (const card of cards) {
@@ -119,7 +128,8 @@ export class InitDeck extends Deck {
 
   /**
    * MS FreeCell LCG 알고리즘으로 시드 기반 셔플
-   * 카드 인덱스: 0=A♣ 1=2♣ … 12=K♣ 13=A♦ … 51=K♠
+   * 카드 인덱스(rank-major, MS 표준): suit = k % 4 (♣♦♥♠), rank = ⌊k / 4⌋ + 1
+   *   0=A♣ 1=A♦ 2=A♥ 3=A♠ 4=2♣ … 51=K♠
    */
   private _createWithGameNumber(gameNumber: number): void {
     const indices: number[] = [];
@@ -135,7 +145,7 @@ export class InitDeck extends Deck {
     // indices[51]이 첫 번째 배분 카드 → pop()은 배열 끝(_cards[51])부터 반환하므로 그대로 저장
     const figures: Figure[] = [Figure.Club, Figure.Diamond, Figure.Heart, Figure.Spade];
     this._cards = indices.map(k => {
-      const card = new Card(figures[Math.floor(k / 13)], (k % 13 + 1) as CardNumber);
+      const card = new Card(figures[k % 4], (Math.floor(k / 4) + 1) as CardNumber);
       card.open();
       return card;
     });
@@ -194,6 +204,9 @@ export class FreeCellDeck extends Deck {
 // ─── TableauDeck: 태블로 컬럼 ────────────────────────────────────────────────
 
 export class TableauDeck extends Deck {
+  /** 직전 pop/popMany가 아래 카드를 자동 오픈했는지 (undo 시 원복 판단용) */
+  private _openedTopOnLastPop = false;
+
   /**
    * 규칙:
    * - 빈 컬럼: 아무 카드나 허용
@@ -216,23 +229,30 @@ export class TableauDeck extends Deck {
    * [원본 버그 수정] 원본 BoardDeck.setCheckMethod()는 파라미터를 무시하고 자기 자신을 대입했음
    */
   override pop(): Card | null {
+    this._openedTopOnLastPop = false;
     if (this.isEmpty()) return null;
     const card = this._cards.pop()!;
     if (!this.isEmpty() && !this.top()!.isOpen) {
       this.top()!.open();
+      this._openedTopOnLastPop = true;
     }
     return card;
   }
 
   /** 위에서 n장 제거 후 아래 카드 자동 오픈 (멀티카드 이동용) */
   override popMany(n: number): Card[] {
+    this._openedTopOnLastPop = false;
     if (n > this._cards.length) return [];
     const removed = this._cards.splice(this._cards.length - n, n);
     if (!this.isEmpty() && !this.top()!.isOpen) {
       this.top()!.open();
+      this._openedTopOnLastPop = true;
     }
     return removed;
   }
+
+  /** 직전 pop/popMany가 아래 카드를 자동 오픈했는지 반환 */
+  didOpenTopOnLastPop(): boolean { return this._openedTopOnLastPop; }
 
   /**
    * 맨 위에서 이어진 올바른 시퀀스 길이 반환

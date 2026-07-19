@@ -662,6 +662,148 @@ test('restart() 없이 (deal 전) → false 반환', () => {
   assert(!g.restart(), 'deal 전 restart는 false');
 });
 
+// ─── MS 게임 번호 딜 (공식 배치 회귀) ────────────────────────────────────────
+
+suite('MS FreeCell 공식 배치 (게임 #1)');
+
+// 카드 → "RankSuit" 문자열 (T=10, C♣ D♦ H♥ S♠)
+function cardStr(card) {
+  const RANK = { 1:'A', 2:'2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7',
+                 8:'8', 9:'9', 10:'T', 11:'J', 12:'Q', 13:'K' };
+  const SUIT = { [Figure.Club]:'C', [Figure.Diamond]:'D', [Figure.Heart]:'H', [Figure.Spade]:'S' };
+  return RANK[card.number] + SUIT[card.figure];
+}
+
+test('게임 #1 → 8개 컬럼이 공식 배치와 일치', () => {
+  // 각 컬럼 바닥→위 (딜 순서). MS FreeCell Game #1 표준 배치.
+  const expected = [
+    'JD KD 2S 4C 3S 6D 6S',
+    '2D KC KS 5C TD 8S 9C',
+    '9H 9S 9D TS 4S 8D 2H',
+    'JC 5S QD QH TH QS 6H',
+    '5D AD JS 4H 8H 6C',
+    '7H QC AS AC 2C 3D',
+    '7C KH AH 4D JH 8C',
+    '5H 3H 3C 7S 7D TC',
+  ];
+  const g = new FreecellGame();
+  g.deal(1);
+  for (let c = 0; c < 8; c++) {
+    const deck = g.getDeck(DeckIndex.Tableau1 + c);
+    const actual = deck.toArray().map(cardStr).join(' ');
+    assertEqual(actual, expected[c], `컬럼 ${c + 1}`);
+  }
+});
+
+test('게임 #1 첫 배분 행 = JD 2D 9H JC 5D 7H 7C 5H', () => {
+  const g = new FreecellGame();
+  g.deal(1);
+  const firstRow = [];
+  for (let c = 0; c < 8; c++) firstRow.push(cardStr(g.getDeck(DeckIndex.Tableau1 + c).get(0)));
+  assertEqual(firstRow.join(' '), 'JD 2D 9H JC 5D 7H 7C 5H');
+});
+
+// ─── Foundation 이동 undo (회귀) ─────────────────────────────────────────────
+
+suite('FreecellGame - Foundation 이동 undo');
+
+test('Foundation으로 보낸 카드가 undo로 회수됨', () => {
+  const g = new FreecellGame();
+  g.deal(1);
+  const t1 = g.getDeck(DeckIndex.Tableau1);
+  const ace = new Card(Figure.Club, CardNumber.Ace); ace.open();
+  t1.push(ace);
+  const beforeSize = t1.size();
+  const found = g.autoMoveToFoundation(DeckIndex.Tableau1);
+  assert(found !== null, 'A♣가 Foundation으로 이동');
+  assertEqual(g.getDeck(DeckIndex.Found1).size(), 1, '이동 후 Foundation 1장');
+  g.undo();
+  assertEqual(g.getDeck(DeckIndex.Found1).size(), 0, 'undo 후 Foundation 0장');
+  assertEqual(t1.size(), beforeSize, 'undo 후 원래 컬럼 크기 복원');
+  assert(t1.top().equals(ace), 'undo 후 A♣가 컬럼 맨 위로 복원');
+});
+
+// ─── Tableau 자동 오픈 카드 undo 재폐쇄 (didOpenCard) ───────────────────────
+
+suite('FreecellGame - undo 시 자동 오픈 카드 재폐쇄');
+
+test('닫힌 카드 위 카드 이동 → undo 시 아래 카드 다시 닫힘', () => {
+  const g = new FreecellGame();
+  g.deal(1);
+  const t1 = g.getDeck(DeckIndex.Tableau1);
+  t1.clear();
+  const king = new Card(Figure.Spade, CardNumber.King); // 닫힌 상태
+  const queen = new Card(Figure.Heart, CardNumber.Queen); queen.open();
+  t1.push(king);
+  t1.push(queen);
+  assert(!t1.get(0).isOpen, '이동 전 King은 닫힘');
+
+  const ok = g.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  assert(ok, 'Queen을 FreeCell로 이동');
+  assert(t1.top().isOpen, '이동 후 King 자동 오픈');
+
+  g.undo();
+  assertEqual(t1.size(), 2, 'undo 후 2장');
+  assert(t1.top().equals(queen), 'undo 후 Queen이 맨 위');
+  assert(!t1.get(0).isOpen, 'undo 후 King 다시 닫힘 (didOpenCard 복원)');
+});
+
+// ─── 키보드 이동 장수 계산 로직 (sequenceLength + canMove) ─────────────────────
+
+suite('키보드 이동 장수 계산 (sequenceLength 반영)');
+
+test('맨 위 시퀀스만 이동 대상으로 계산', () => {
+  const g = new FreecellGame();
+  g.deal(1);
+  const src = g.getDeck(DeckIndex.Tableau1);
+  const dst = g.getDeck(DeckIndex.Tableau2);
+  src.clear();
+  dst.clear();
+  // 컬럼: [무관 5♠][무관 5♠ 위 시퀀스 아님] ... 맨 위 2장만 시퀀스: 8♥ 7♠
+  src.push(makeOpen(Figure.Club, CardNumber.King));  // 시퀀스와 무관
+  src.push(makeOpen(Figure.Heart, CardNumber.Eight));
+  src.push(makeOpen(Figure.Spade, CardNumber.Seven));
+  assertEqual(src.sequenceLength(), 2, '맨 위 연속 시퀀스 길이 = 2');
+
+  // 목적지: 9♦ (7♠ 위에 8♥가 올라가려면 목적지 top이 9 red? 8♥는 red, 9는 black이어야)
+  dst.push(makeOpen(Figure.Club, CardNumber.Nine)); // 9♣(black) ← 8♥(red) 수용 가능
+  // maxMovableCount는 충분(빈 셀 4, 빈 태블로 다수) → 시퀀스 길이 2로 제한되어야 함
+  const maxCount = g.maxMovableCount(g.emptyFreeCellCount(), g.emptyTableauCount(DeckIndex.Tableau2));
+  const seqLen = src.sequenceLength();
+  let count = Math.min(seqLen, maxCount);
+  while (count > 1 && !g.canMove(DeckIndex.Tableau1, DeckIndex.Tableau2, count)) count--;
+  assertEqual(count, 2, '계산된 이동 장수 = 2 (시퀀스 전체)');
+  assert(g.canMove(DeckIndex.Tableau1, DeckIndex.Tableau2, count), '해당 장수로 이동 가능');
+});
+
+function makeOpen(fig, num) { const c = new Card(fig, num); c.open(); return c; }
+
+// ─── 자동 완료 판정 ─────────────────────────────────────────────────────────
+
+suite('FreecellGame - canAutoComplete');
+
+test('모든 카드가 순서대로 올라갈 수 있으면 true', () => {
+  const g = new FreecellGame();
+  g.deal(1);
+  // 각 태블로를 비우고 4개 컬럼에 무늬별 A→K 내림차순(위가 A) 배치
+  for (let i = DeckIndex.Free1; i <= DeckIndex.Tableau8; i++) {
+    if (i >= DeckIndex.Found1 && i <= DeckIndex.Found4) continue;
+    g.getDeck(i).clear();
+  }
+  const figs = [Figure.Club, Figure.Diamond, Figure.Heart, Figure.Spade];
+  for (let f = 0; f < 4; f++) {
+    const col = g.getDeck(DeckIndex.Tableau1 + f);
+    for (let n = CardNumber.King; n >= CardNumber.Ace; n--) col.push(makeOpen(figs[f], n));
+  }
+  assert(g.canAutoComplete(), '전부 순서대로 올릴 수 있으면 canAutoComplete true');
+});
+
+test('막힌 배치면 false', () => {
+  const g = new FreecellGame();
+  g.deal(1);
+  assert(!g.canAutoComplete(), '초기 배치는 자동 완료 불가');
+});
+
 // ─── 결과 ───────────────────────────────────────────────────────────────────
 
 const total = passed + failed;

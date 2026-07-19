@@ -31,6 +31,10 @@ export class SoundManager {
     play(name) {
         if (this._muted || !this.ctx || !this._initialized)
             return;
+        // 모바일 Safari 등에서 백그라운드 복귀 후 컨텍스트가 suspended면 소리가 안 남 → 재개
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => { });
+        }
         const buffer = this.buffers.get(name);
         if (!buffer)
             return;

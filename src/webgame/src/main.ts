@@ -8,6 +8,13 @@ import { DeckIndex } from './deck.js';
 // ─── 게임 컨트롤러 ────────────────────────────────────────────────────────
 
 class GameController {
+  /** MS FreeCell 1~32000 중 유일하게 풀 수 없는 게임 번호 */
+  private static readonly UNSOLVABLE_GAMES: number[] = [11982];
+
+  /** 자동 완료 진행 중 여부 (입력/재진입 차단용) */
+  private _autoCompleting = false;
+  private _autoCompleteTimer = 0;
+
   private game:    FreecellGame;
   private renderer: Renderer;
   private input:   InputHandler;
@@ -15,7 +22,6 @@ class GameController {
   private storage: GameStorage;
 
   private canvas!:       HTMLCanvasElement;
-  private _rafId = 0;
   private startTime:     number = 0;
   private elapsed:       number = 0;
   private timerInterval: number = 0;
@@ -65,6 +71,10 @@ class GameController {
       onHelp:     () => this._toggleHelp(),
       onMoveCard: (from, to, count) => this._handleMove(from, to, count),
       onAutoMove: (from) => this._handleAutoMove(from),
+      isHelpOpen: () => !this.helpOverlay.classList.contains('hidden'),
+      isModalBlocking: () =>
+        !this.confirmOverlay.classList.contains('hidden') ||
+        !this.gameNumberOverlay.classList.contains('hidden'),
     });
   }
 
@@ -296,6 +306,7 @@ class GameController {
     this._gnReturnState = this.game.state;
     this._hideAllOverlays();
     this.elGameNumberInput.value = '';
+    this._clearGameNumberError();
     this.gameNumberOverlay.classList.remove('hidden');
     // 약간의 딜레이 후 포커스 (오버레이 전환 애니메이션 후)
     setTimeout(() => this.elGameNumberInput.focus(), 50);
@@ -304,10 +315,48 @@ class GameController {
   /** 게임 번호 다이얼로그에서 시작 */
   private _onGameNumberStart(): void {
     const raw = this.elGameNumberInput.value.trim();
-    const parsed = raw ? parseInt(raw, 10) : NaN;
-    const gameNumber = (!isNaN(parsed) && parsed >= 1 && parsed <= 32000) ? parsed : undefined;
+
+    // 비워두면 랜덤 게임
+    if (raw === '') {
+      this._clearGameNumberError();
+      this.gameNumberOverlay.classList.add('hidden');
+      this._newGame(undefined);
+      return;
+    }
+
+    const parsed = parseInt(raw, 10);
+    // 범위 밖/비정수 → 안내 후 다이얼로그 유지 (무음 fallback 제거)
+    if (isNaN(parsed) || parsed < 1 || parsed > 32000) {
+      this._showGameNumberError('1 – 32000 사이의 숫자를 입력하세요.');
+      return;
+    }
+    // 풀 수 없는 게임 → 안내 후 다이얼로그 유지
+    if (GameController.UNSOLVABLE_GAMES.includes(parsed)) {
+      this._showGameNumberError(`#${parsed}은(는) 풀 수 없는 게임입니다. 다른 번호를 입력하세요.`);
+      return;
+    }
+
+    this._clearGameNumberError();
     this.gameNumberOverlay.classList.add('hidden');
-    this._newGame(gameNumber);
+    this._newGame(parsed);
+  }
+
+  private _showGameNumberError(msg: string): void {
+    const el = document.getElementById('game-number-error');
+    if (el) {
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+    this.elGameNumberInput.focus();
+    this.elGameNumberInput.select();
+  }
+
+  private _clearGameNumberError(): void {
+    const el = document.getElementById('game-number-error');
+    if (el) {
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
   }
 
   /** 게임 번호 다이얼로그에서 취소 */
@@ -407,18 +456,16 @@ class GameController {
   }
 
   private _handleMove(from: DeckIndex, to: DeckIndex, count: number): boolean {
-    const maxCount = this.game.maxMovableCount(
-      this.game.emptyFreeCellCount(),
-      this.game.emptyTableauCount(to),
-    );
-    const actualCount = Math.min(count, maxCount);
+    if (this._autoCompleting) return false; // 자동 완료 중 입력 차단
 
-    const ok = this.game.moveCard(from, to, actualCount);
+    // 이동 가능 장수 초과 시 자르지 않고 실패 처리 (부분 이동으로 인한 의도 불일치 방지)
+    const ok = this.game.moveCard(from, to, count);
     if (ok) {
       this.sound.play('card_place');
       this._updateUI();
       this._scheduleSave(); // 이동 후 자동저장
       if (this.game.state === 'win') this._onWin();
+      else this._maybeAutoComplete();
     } else {
       this.sound.play('invalid');
     }
@@ -426,12 +473,56 @@ class GameController {
   }
 
   private _handleAutoMove(from: DeckIndex): void {
+    if (this._autoCompleting) return; // 자동 완료 중 입력 차단
+
     const result = this.game.autoMoveToFoundation(from);
     if (result !== null) {
       this.sound.play('card_place');
       this._updateUI();
       this._scheduleSave();
       if (this.game.state === 'win') this._onWin();
+      else this._maybeAutoComplete();
+    }
+  }
+
+  // ── 자동 완료 ───────────────────────────────────────────────────────────
+
+  /** 남은 카드를 모두 Foundation으로 올릴 수 있는 상태면 자동 완료 시작 */
+  private _maybeAutoComplete(): void {
+    if (this._autoCompleting) return;
+    if (this.game.state !== 'play') return;
+    if (!this.game.canAutoComplete()) return;
+    this._startAutoComplete();
+  }
+
+  /** 한 장씩 애니메이션처럼 Foundation으로 이동시키며 게임 종료까지 진행 */
+  private _startAutoComplete(): void {
+    this._autoCompleting = true;
+    const tick = (): void => {
+      if (this.game.state !== 'play') { this._stopAutoComplete(); return; }
+      let moved = false;
+      for (let i = DeckIndex.Free1; i <= DeckIndex.Tableau8; i++) {
+        if (this.game.autoMoveToFoundation(i as DeckIndex) !== null) { moved = true; break; }
+      }
+      if (!moved) { this._stopAutoComplete(); return; }
+
+      this.sound.play('card_place');
+      this._updateUI();
+      if (this.game.isWin()) {
+        this._stopAutoComplete();
+        this._onWin();
+        return;
+      }
+      this._autoCompleteTimer = window.setTimeout(tick, 120);
+    };
+    this._autoCompleteTimer = window.setTimeout(tick, 120);
+  }
+
+  private _stopAutoComplete(): void {
+    this._autoCompleting = false;
+    if (this._autoCompleteTimer) {
+      clearTimeout(this._autoCompleteTimer);
+      this._autoCompleteTimer = 0;
     }
   }
 
@@ -444,9 +535,16 @@ class GameController {
     this.elWinMoves.textContent = String(this.game.moveCount);
     this.elWinTime.textContent  = this._formatTime(this.elapsed);
 
-    setTimeout(() => {
-      this.winOverlay.classList.remove('hidden');
-    }, 2000);
+    // 승리 애니메이션이 끝난 뒤 결과 오버레이 표시 (안전장치로 최대 12초 대기)
+    const startedAt = Date.now();
+    const showWhenDone = () => {
+      if (!this.renderer.isAnimating || Date.now() - startedAt > 12000) {
+        this.winOverlay.classList.remove('hidden');
+      } else {
+        setTimeout(showWhenDone, 250);
+      }
+    };
+    setTimeout(showWhenDone, 1500);
   }
 
   // ── UI 업데이트 ─────────────────────────────────────────────────────────
@@ -487,6 +585,7 @@ class GameController {
   // ── 타이머 ─────────────────────────────────────────────────────────────
 
   private _startTimer(): void {
+    this._stopTimer(); // 기존 interval 정리 (중복 호출 시 interval 누수 방지)
     this.startTime = Date.now() - this.elapsed * 1000;
     this.timerInterval = window.setInterval(() => {
       this.elapsed = (Date.now() - this.startTime) / 1000;
@@ -514,10 +613,9 @@ class GameController {
       if (this.game.state !== 'idle') {
         this.renderer.render(this.game, this.input.getDragState(), this.elapsed, this.input.getKeyboardState());
       }
-      this._rafId = requestAnimationFrame(step);
-      void this._rafId;
+      requestAnimationFrame(step);
     };
-    this._rafId = requestAnimationFrame(step);
+    requestAnimationFrame(step);
   }
 }
 
