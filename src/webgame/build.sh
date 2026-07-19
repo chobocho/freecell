@@ -5,9 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 RELEASE_DIR="release"
+OUT_HTML="$RELEASE_DIR/index.html"
 
 echo "========================================="
-echo " FreeCell Web - Release Build"
+echo " FreeCell Web - Single-File Release Build"
 echo "========================================="
 echo
 
@@ -19,27 +20,21 @@ echo "       Done."
 # Step 2: Clean release folder
 echo "[2/3] Cleaning release folder..."
 rm -rf "$RELEASE_DIR"
-mkdir -p "$RELEASE_DIR/css" "$RELEASE_DIR/dist" "$RELEASE_DIR/img"
+mkdir -p "$RELEASE_DIR"
 echo "       Done."
 
-# Step 3: Copy files
-echo "[3/3] Copying files..."
-cp index.html       "$RELEASE_DIR/"
-cp css/style.css    "$RELEASE_DIR/css/"
-cp dist/*.js        "$RELEASE_DIR/dist/"
-cp img/*            "$RELEASE_DIR/img/"
+# Step 3: Bundle everything into a single self-contained index.html
+#         - CSS  -> inlined <style>
+#         - JS   -> all ES modules concatenated into one <script type="module">
+#         - IMG  -> every img/*.png embedded as base64 data URI
+#         (sounds are generated at runtime via Web Audio API, no files needed)
+echo "[3/3] Bundling into single index.html..."
+node bundle.js
 echo "       Done."
 echo
 
-# Summary
-JS_COUNT=$(ls "$RELEASE_DIR/dist/"*.js 2>/dev/null | wc -l)
-IMG_COUNT=$(ls "$RELEASE_DIR/img/"*    2>/dev/null | wc -l)
-
 echo "========================================="
-echo " Build complete: $SCRIPT_DIR/$RELEASE_DIR/"
-echo " - index.html"
-echo " - css/style.css"
-echo " - dist/*.js  ($JS_COUNT files)"
-echo " - img/*      ($IMG_COUNT files)"
+echo " Build complete: $SCRIPT_DIR/$OUT_HTML"
+echo " - Single self-contained file (open directly in a browser)"
 echo "========================================="
 echo
