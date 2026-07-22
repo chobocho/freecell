@@ -2,8 +2,8 @@ apply plugin: 'com.android.application'
 
 android {
     namespace "com.chobocho.cardgame"
-    compileSdk 36
-    buildToolsVersion "36.0.0"
+    compileSdk 37
+    buildToolsVersion '37.0.0'
 
     def versionPropsFile = file('versioninfo.properties')
     def Properties versionInfo = new Properties()
@@ -12,14 +12,14 @@ android {
         versionInfo.load(new FileInputStream(versionPropsFile))
     } else {
         versionInfo['VERSION_HEADER'] = "0.1105"
-        versionInfo['VERSION_CODE'] = 0
-        versionInfo['MONTHLY_RELEASE_COUNT'] = 0
+        versionInfo['VERSION_CODE'] = 1
+        versionInfo['MONTHLY_RELEASE_COUNT'] = 1
         versionInfo['BUILD_COUNT'] = 0
     }
 
     def versionHeader = versionInfo['VERSION_HEADER']
     def releaseVersionCode = versionInfo['VERSION_CODE'].toInteger()
-    def monthVersionCount = versionInfo['MONTHLY_RELEASE_COUNT'].toInteger()
+    def versionCount = versionInfo['MONTHLY_RELEASE_COUNT'].toInteger()
     def buildCount = versionInfo['BUILD_COUNT'].toInteger()
 
     def taskName = gradle.startParameter.taskNames
@@ -29,7 +29,7 @@ android {
     if (":app:bundleRelease" in taskName) {
         println '---[bundleRelease]---'
         releaseVersionCode += addVersion
-        monthVersionCount += addVersion
+        versionCount += addVersion
         isReleaseVersion = true
     }
 
@@ -37,8 +37,8 @@ android {
 
     versionInfo['VERSION_HEADER'] = versionHeader.toString()
     versionInfo['VERSION_CODE'] = releaseVersionCode.toString()
-    versionInfo['MONTHLY_RELEASE_COUNT'] = monthVersionCount.toString()
-    versionInfo['BUILD_COUNT'] = isReleaseVersion ? "1" : buildCount.toString()
+    versionInfo['MONTHLY_RELEASE_COUNT'] = versionCount.toString()
+    versionInfo['BUILD_COUNT'] = buildCount.toString()
 
     versionInfo.store(versionPropsFile.newWriter(), null)
 
@@ -46,19 +46,18 @@ android {
     def alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     def thisYear =  alphabet.charAt(date.getYear() + 1900 - 2001)
     def thisMonth = alphabet.charAt(date.getMonth())
-    def monthVersion = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(monthVersionCount)
 
     println '-------------------'
     println taskName
-    println "${versionHeader}.${thisYear}${thisMonth}${monthVersion}.${buildCount}"
+    println "${versionHeader}.${thisYear}${thisMonth}${versionCount}.${buildCount}"
     println '-------------------'
 
     defaultConfig {
         applicationId "com.chobocho.cardgame"
         minSdkVersion 26
-        targetSdkVersion 36
+        targetSdkVersion 37
         versionCode releaseVersionCode
-        versionName "${versionHeader}.${thisYear}${thisMonth}${monthVersion}.${buildCount}"
+        versionName "${versionHeader}.${thisYear}${thisMonth}${versionCount}.${buildCount}"
         setProperty("archivesBaseName", "freecell_$versionName")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -69,18 +68,30 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    compileSdkMinor 1
 
+}
+
+// Kotlin 1.8 merged the jdk7/jdk8 stdlib artifacts into kotlin-stdlib.
+// AppCompat 1.7.0 transitively pulls the legacy kotlin-stdlib-jdk8:1.6.21,
+// which duplicates classes from kotlin-stdlib:1.8.22. Align them to avoid
+// the "Duplicate class kotlin.*" build failure.
+configurations.all {
+    resolutionStrategy {
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'androidx.navigation:navigation-fragment:2.0.0'
-    implementation 'androidx.navigation:navigation-ui:2.0.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }
