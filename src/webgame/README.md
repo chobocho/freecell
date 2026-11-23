@@ -108,6 +108,7 @@ webgame/
 ├── src/              # TypeScript 소스
 │   ├── card.ts       # Card, Figure, CardNumber, Color
 │   ├── deck.ts       # Deck 추상 클래스 및 4가지 구현
+│   ├── dom.ts        # 필수 DOM 요소 조회 (없으면 id 를 알려주는 오류)
 │   ├── freecell.ts   # 게임 로직 (상태 머신, 이동 규칙)
 │   ├── input.ts      # 마우스/터치/키보드 입력 처리
 │   ├── lfsr.ts       # 랜덤 새 게임용 LFSR 게임 번호 순환
@@ -127,13 +128,16 @@ webgame/
 ├── index.html
 ├── build.sh / build.bat  # 릴리스 빌드 (tsc → esbuild → bundle.js)
 ├── bundle.js         # JS·CSS·이미지를 release/index.html 하나로 조립
-├── tests/            # Node.js 유닛 테스트 (190개, node --test)
+├── tests/            # Node.js 유닛 테스트 (210개, node --test)
 │   ├── helpers.mjs         # 공용 도우미 (suite/test/assert, 가짜 입력 환경)
 │   ├── deck.test.mjs       # 카드, 덱
 │   ├── game.test.mjs       # 게임 규칙 (이동, 되돌리기, 승리, 자동 이동)
 │   ├── game-number.test.mjs  # 게임 번호 배치, 같은 판 다시 하기, 포기
 │   ├── game-save.test.mjs  # 저장 / 복원
 │   ├── input.test.mjs      # 키보드 / 터치 입력
+│   ├── renderer.test.mjs   # 패배 이펙트
+│   ├── sound.test.mjs      # 사운드 초기화 / 재생
+│   ├── dom.test.mjs        # 필수 DOM 요소 조회
 │   ├── lfsr.test.mjs       # 게임 번호 순환
 │   ├── solver.test.mjs     # 솔버
 │   ├── difficulty.test.mjs # 난이도 표

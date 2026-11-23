@@ -151,5 +151,20 @@
   <p>검증: 분리 전후 190개로 동일, 전체 통과. 실패 시 종료 코드 1, 통과 시 0 확인.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: DOM 오류 메시지 / 사운드 초기화 / 패배 이펙트 수정 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-24</p>
+  <ul>
+    <li><code>src/webgame/src/dom.ts</code>(신규), <code>main.ts</code>: 필수 DOM 요소가 없으면 어떤 id인지 알려주는 오류를 냅니다.</li>
+    <li><code>src/webgame/src/sound.ts</code>: 초기화 때 suspended 상태의 오디오 컨텍스트를 바로 재개합니다(iOS Safari 대응).
+        연달아 초기화하면 컨텍스트가 여러 개 생기던 문제도 고쳤습니다.</li>
+    <li><code>src/webgame/src/renderer.ts</code>: 패배 이펙트에서 카드가 전부 사라졌다가 하나씩 나타나던 문제와,
+        FreeCell·Foundation 카드가 이펙트 없이 사라지던 문제를 고쳤습니다. (이중 표시 문제는 FreeCell에는 없었습니다.)</li>
+    <li>테스트 20개 추가 (<code>dom</code> 3, <code>sound</code> 8, <code>renderer</code> 9).</li>
+  </ul>
+  <p>검증: <code>node --test</code> 210/210 통과, <code>build.sh</code> 빌드 성공, Chrome에서 포기 이펙트 확인.
+     실제 iOS Safari에서의 사운드 동작은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>
