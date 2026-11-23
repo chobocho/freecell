@@ -166,5 +166,19 @@
      실제 iOS Safari에서의 사운드 동작은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 코드 리뷰 후 수정 (다시 하기 중복 실행 / 입력 상태 / 손상된 저장본)</h2>
+  <p class="date">2026-11-24</p>
+  <ul>
+    <li><code>src/webgame/src/main.ts</code>: 다시 하기 이펙트 중 다시 하기를 또 누르면 대기 타이머가 남아
+        판이 0.1초마다 계속 초기화되던 문제를 고쳤습니다. 이펙트 중에는 일시정지 해제·새 게임·다시 하기·포기를 받지 않습니다.</li>
+    <li><code>src/webgame/src/input.ts</code>: 판이 바뀌면 키보드 선택과 드래그를 해제합니다. 마우스는 왼쪽 버튼만 드래그합니다.</li>
+    <li><code>src/webgame/src/freecell.ts</code>: 덱 수가 다르거나 이동 이력이 잘못된 저장본은 복원하지 않습니다.</li>
+    <li>테스트 14개 추가. <code>tests/main.test.mjs</code>(신규)는 가짜 DOM으로 실제 컨트롤러를 구동합니다.</li>
+    <li>안 쓰는 브랜치 <code>fix/ime-shortcuts-multitouch</code>(master에 병합됨)를 로컬과 원격에서 삭제했습니다.</li>
+  </ul>
+  <p>검증: <code>node --test</code> 224/224 통과, <code>build.sh</code> 빌드 성공. 브라우저에서 직접 확인하지는 않았습니다.</p>
+</div>
+
 </body>
 </html>
