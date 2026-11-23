@@ -239,6 +239,7 @@ class GameController {
         this._cancelWinOverlayTimer();
         this._cancelRestartPoll();
         this.renderer.stopEffects();
+        this.input.clearSelection();
         const restoredElapsed = this.game.restore(snap);
         if (restoredElapsed === null) {
             // 복원 실패 → 새 게임
@@ -312,6 +313,8 @@ class GameController {
     }
     /** 새 게임 요청: 게임 진행 중이면 확인 팝업, 아니면 게임 번호 선택으로 */
     _requestNewGame() {
+        if (this._restartPending)
+            return;
         if (this.game.state === 'play' || this.game.state === 'pause') {
             this._showConfirm('newgame');
         }
@@ -447,6 +450,8 @@ class GameController {
     }
     /** 다시 하기 요청 */
     _requestRestart() {
+        if (this._restartPending)
+            return;
         if (this.game.state === 'play' || this.game.state === 'pause') {
             this._showConfirm('restart');
         }
@@ -461,6 +466,8 @@ class GameController {
     _requestGiveUp() {
         if (this._autoCompleting)
             return; // 자동 완료 중에는 곧 승리하므로 무시
+        if (this._restartPending)
+            return;
         if (this.game.state === 'play' || this.game.state === 'pause') {
             this._showConfirm('giveup');
         }
@@ -473,6 +480,7 @@ class GameController {
         this._cancelWinOverlayTimer();
         this._cancelRestartPoll();
         this._cancelPendingSave();
+        this.input.clearSelection();
         this.storage.clear(); // 포기한 판은 이어하기 대상이 아님
         this.elPauseBtn.textContent = '⏸ 일시정지';
         this._hideAllOverlays();
@@ -523,6 +531,7 @@ class GameController {
         this._cancelFailOverlayTimer();
         this._cancelRestartPoll();
         this.renderer.stopEffects();
+        this.input.clearSelection();
         if (!this.game.restart())
             return;
         this.elapsed = 0;
@@ -547,6 +556,9 @@ class GameController {
         this._stopTimer();
         this._stopAutoComplete();
         this._cancelWinOverlayTimer();
+        // 대기 타이머가 겹치면 먼저 만든 쪽이 지워지지 않고 남아 판을 계속 초기화한다
+        this._cancelRestartPoll();
+        this.input.clearSelection();
         this.elPauseBtn.textContent = '⏸ 일시정지';
         this._hideAllOverlays();
         // 실패 이펙트 시작 (현재 카드 배치에서 불타며 날아감)
@@ -565,6 +577,12 @@ class GameController {
             }
         }, 100);
     }
+    /**
+     * 다시 하기 이펙트가 끝나길 기다리는 중인지.
+     * 이 동안 판은 pause 상태로 멈춰 있고 보드는 보이지 않으므로,
+     * 일시정지 해제·새 게임·다시 하기·포기 요청을 받지 않는다 (곧 같은 판이 새로 시작된다).
+     */
+    get _restartPending() { return this._restartPollTimer !== 0; }
     _cancelRestartPoll() {
         if (this._restartPollTimer) {
             clearInterval(this._restartPollTimer);
@@ -581,6 +599,7 @@ class GameController {
         this._cancelFailOverlayTimer();
         this._cancelRestartPoll();
         this.renderer.stopEffects();
+        this.input.clearSelection();
         this.storage.clear();
         this.game.deal(gameNumber);
         this.elapsed = 0;
@@ -614,6 +633,8 @@ class GameController {
         this._scheduleSave();
     }
     _togglePause() {
+        if (this._restartPending)
+            return;
         if (this.game.state === 'idle' || this.game.state === 'win' || this.game.state === 'lost')
             return;
         if (this.game.state === 'play') {

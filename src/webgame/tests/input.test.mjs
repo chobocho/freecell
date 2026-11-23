@@ -187,3 +187,36 @@ test('touchcancel 후 새 터치로 드래그 가능', () => {
   assertEqual(env.input.getDragState().fromDeck, DeckIndex.Tableau2);
   assert(env.input.getDragState().isDragging);
 });
+
+suite('마우스: 왼쪽 버튼만 드래그');
+
+test('왼쪽 버튼으로 누르면 드래그 시작', () => {
+  const env = makeInputEnv();
+  const t = touchOnTop(env, DeckIndex.Tableau1, 0);
+  env.mouse('mousedown', t.clientX, t.clientY, 0);
+  assert(env.input.getDragState().isDragging, '드래그 중');
+});
+
+test('오른쪽/가운데 버튼으로는 드래그가 시작되지 않음', () => {
+  for (const button of [1, 2]) {
+    const env = makeInputEnv();
+    const t = touchOnTop(env, DeckIndex.Tableau1, 0);
+    env.mouse('mousedown', t.clientX, t.clientY, button);
+    assert(!env.input.getDragState().isDragging, `button=${button}`);
+  }
+});
+
+suite('입력 상태 초기화 (새 판 시작 시)');
+
+test('clearSelection(): 키보드 선택과 드래그를 모두 해제', () => {
+  const env = makeInputEnv();
+  env.key('Digit3', '3');
+  assertEqual(env.input.getKeyboardState().selectedDeck, DeckIndex.Tableau3);
+  env.input.clearSelection();
+  assertEqual(env.input.getKeyboardState().selectedDeck, null);
+
+  const t = touchOnTop(env, DeckIndex.Tableau1, 0);
+  env.mouse('mousedown', t.clientX, t.clientY, 0);
+  env.input.clearSelection();
+  assert(!env.input.getDragState().isDragging, '드래그 해제');
+});

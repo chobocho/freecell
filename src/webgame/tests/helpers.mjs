@@ -85,7 +85,9 @@ export function makeInputEnv(gameNumber = 1) {
     target: null, preventDefault() {}, ...mods,
   });
   const touch = (type, touches) => canL[type]({ changedTouches: touches, preventDefault() {} });
-  return { game, renderer, input, calls, key, touch };
+  const mouse = (type, x, y, button = 0) =>
+    canL[type]({ clientX: x, clientY: y, button, preventDefault() {} });
+  return { game, renderer, input, calls, key, touch, mouse };
 }
 
 /** 덱 맨 위 카드의 중앙 좌표에 해당하는 가짜 Touch */

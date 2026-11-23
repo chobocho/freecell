@@ -99,11 +99,19 @@ export class InputHandler {
   getDragState(): DragState { return this.drag; }
   getKeyboardState(): KeyboardSelectState { return this._kbState; }
 
+  /** 키보드 선택과 진행 중인 드래그를 해제 (판이 바뀔 때 이전 판의 선택이 남지 않도록) */
+  clearSelection(): void {
+    this._kbState.selectedDeck = null;
+    if (this.drag.isDragging) this._cancelDrag();
+  }
+
   // ── 마우스 ──────────────────────────────────────────────────────────────
 
   private _bindMouse(): void {
     this.canvas.addEventListener('mousedown', e => {
       e.preventDefault();
+      // 왼쪽 버튼만 드래그 — 오른쪽 버튼은 컨텍스트 메뉴가 떠 mouseup 이 오지 않아 드래그가 남는다
+      if (e.button !== 0) return;
       this._onPress(e.clientX, e.clientY);
     });
     this.canvas.addEventListener('mousemove', e => {
