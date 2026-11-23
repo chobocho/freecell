@@ -146,6 +146,7 @@ webgame/
 │   └── build.test.mjs      # 릴리스 빌드 조립
 ├── tsconfig.json
 ├── history.md        # 개발 이력
+├── history_*.md      # 이전 개발 이력 (history.md 가 30KB 를 넘으면 백업)
 └── Todo.md           # 요구사항 정의
 ```
 
