@@ -28,6 +28,8 @@ class GameController {
         this._winOverlayTimer = 0;
         /** 실패 이펙트 종료 대기 폴링 타이머 (새 게임 시작 시 취소해야 함) */
         this._restartPollTimer = 0;
+        /** 포기 이펙트가 끝나길 기다리는 폴링 타이머 */
+        this._failOverlayTimer = 0;
         // 확인 팝업 관련 상태
         this._confirmFromPause = false;
         this._confirmAction = 'newgame';
@@ -85,6 +87,8 @@ class GameController {
         this.confirmOverlay = document.getElementById('confirm-overlay');
         this.elConfirmMsg = document.getElementById('confirm-msg');
         this.elConfirmYesBtn = document.getElementById('confirm-yes-btn');
+        this.failOverlay = document.getElementById('fail-overlay');
+        this.elGiveUpBtn = document.getElementById('btn-give-up');
         this.gameNumberOverlay = document.getElementById('game-number-overlay');
         this.elGameNumberInput = document.getElementById('game-number-input');
     }
@@ -116,6 +120,15 @@ class GameController {
         });
         // 승리 후 새 게임
         document.getElementById('overlay-win-new-btn').addEventListener('click', () => {
+            this._showGameNumberDialog();
+        });
+        // 포기
+        this.elGiveUpBtn.addEventListener('click', () => this._requestGiveUp());
+        // 포기 후: 같은 판 다시 하기 / 새 게임
+        document.getElementById('overlay-fail-retry-btn').addEventListener('click', () => {
+            this._restartSameDeal();
+        });
+        document.getElementById('overlay-fail-new-btn').addEventListener('click', () => {
             this._showGameNumberDialog();
         });
         // 도움말 닫기
@@ -150,6 +163,9 @@ class GameController {
             this.confirmOverlay.classList.add('hidden');
             if (this._confirmAction === 'restart') {
                 this._doRestart();
+            }
+            else if (this._confirmAction === 'giveup') {
+                this._doGiveUp();
             }
             else {
                 this._showGameNumberDialog();
@@ -272,6 +288,10 @@ class GameController {
             this.elConfirmMsg.innerHTML = '현재 게임을 처음부터<br>다시 시작할까요?';
             this.elConfirmYesBtn.textContent = '♻ 다시 하기';
         }
+        else if (action === 'giveup') {
+            this.elConfirmMsg.innerHTML = '정말 포기하시겠습니까?';
+            this.elConfirmYesBtn.textContent = '✕ 포기';
+        }
         else {
             this.elConfirmMsg.innerHTML = '진행 중인 게임을 포기하고<br>새 게임을 시작할까요?';
             this.elConfirmYesBtn.textContent = '✦ 새 게임';
@@ -296,6 +316,10 @@ class GameController {
     /** 게임 번호 선택 다이얼로그 표시 */
     _showGameNumberDialog() {
         this._gnReturnState = this.game.state;
+        // 승리/포기 이펙트 중에 열면, 예약된 결과 오버레이가 이 창 위로 뒤늦게 뜨지 않도록 취소
+        // (취소 버튼을 누르면 _onGameNumberCancel 이 결과 오버레이를 바로 보여준다)
+        this._cancelWinOverlayTimer();
+        this._cancelFailOverlayTimer();
         this._hideAllOverlays();
         this.elGameNumberInput.value = '';
         this._clearGameNumberError();
@@ -401,6 +425,9 @@ class GameController {
         else if (s === 'win') {
             this.winOverlay.classList.remove('hidden');
         }
+        else if (s === 'lost') {
+            this.failOverlay.classList.remove('hidden');
+        }
         else if (s === 'pause') {
             this.pauseOverlay.classList.remove('hidden');
         }
@@ -416,7 +443,88 @@ class GameController {
         if (this.game.state === 'play' || this.game.state === 'pause') {
             this._showConfirm('restart');
         }
+        else if (this.game.state === 'lost') {
+            // 이미 포기한 판 — 잃을 진행 상황이 없으므로 확인 없이 바로 다시 시작
+            this._restartSameDeal();
+        }
         // idle/win 상태에서는 다시 하기 의미 없음
+    }
+    // ── 포기 ───────────────────────────────────────────────────────────────
+    /** 포기 요청: 진행 중인 판일 때만 확인 팝업 표시 */
+    _requestGiveUp() {
+        if (this._autoCompleting)
+            return; // 자동 완료 중에는 곧 승리하므로 무시
+        if (this.game.state === 'play' || this.game.state === 'pause') {
+            this._showConfirm('giveup');
+        }
+    }
+    /** 포기 확정: 실패 이펙트 후 결과(패배) 오버레이 표시 */
+    _doGiveUp() {
+        if (!this.game.giveUp())
+            return;
+        this._stopTimer();
+        this._cancelWinOverlayTimer();
+        this._cancelRestartPoll();
+        this._cancelPendingSave();
+        this.storage.clear(); // 포기한 판은 이어하기 대상이 아님
+        this.elPauseBtn.textContent = '⏸ 일시정지';
+        this._hideAllOverlays();
+        this._updateUI();
+        const n = this.game.gameNumber;
+        document.getElementById('fail-game').textContent = n > 0 ? `#${n}` : '랜덤';
+        document.getElementById('fail-moves').textContent = String(this.game.moveCount);
+        document.getElementById('fail-time').textContent = this._formatTime(this.elapsed);
+        // 초기 배열을 모르는 판(옛 저장본의 번호 없는 게임)은 같은 판 다시 하기를 숨김
+        document.getElementById('overlay-fail-retry-btn')
+            .classList.toggle('hidden', !this.game.canRestart);
+        this.sound.play('lose');
+        this.renderer.startFailEffect(this.game);
+        // 이펙트가 끝나면 오버레이 표시 (안전장치로 최대 8초 대기)
+        const startedAt = Date.now();
+        const showWhenDone = () => {
+            if (!this.renderer.isFailAnimating || Date.now() - startedAt > 8000) {
+                this._failOverlayTimer = 0;
+                this.failOverlay.classList.remove('hidden');
+            }
+            else {
+                this._failOverlayTimer = window.setTimeout(showWhenDone, 100);
+            }
+        };
+        this._failOverlayTimer = window.setTimeout(showWhenDone, 100);
+    }
+    /** 예약된 패배 오버레이 표시 취소 (포기 직후 새 게임/다시 하기 시 누출 방지) */
+    _cancelFailOverlayTimer() {
+        if (this._failOverlayTimer) {
+            clearTimeout(this._failOverlayTimer);
+            this._failOverlayTimer = 0;
+        }
+    }
+    /** 예약된 자동저장 취소 (포기 직후 뒤늦은 저장으로 이어하기가 되살아나는 것 방지) */
+    _cancelPendingSave() {
+        if (this._saveTimer) {
+            clearTimeout(this._saveTimer);
+            this._saveTimer = 0;
+        }
+    }
+    /** 포기한 판을 이펙트 없이 같은 배열로 처음부터 다시 시작 */
+    _restartSameDeal() {
+        if (!this.game.canRestart)
+            return;
+        this.sound.init();
+        this._stopTimer();
+        this._cancelFailOverlayTimer();
+        this._cancelRestartPoll();
+        this.renderer.stopEffects();
+        if (!this.game.restart())
+            return;
+        this.elapsed = 0;
+        this._startTimer();
+        this._hideAllOverlays();
+        this.elPauseBtn.textContent = '⏸ 일시정지';
+        this._updateUI();
+        this._updateGameNumberDisplay();
+        this.storage.clear();
+        this._scheduleSave();
     }
     /** 실패 이펙트 후 동일 배열로 재시작 */
     _doRestart() {
@@ -458,6 +566,7 @@ class GameController {
         this.sound.init();
         this._stopTimer();
         this._cancelWinOverlayTimer();
+        this._cancelFailOverlayTimer();
         this._cancelRestartPoll();
         this.renderer.stopEffects();
         this.storage.clear();
@@ -493,7 +602,7 @@ class GameController {
         this._scheduleSave();
     }
     _togglePause() {
-        if (this.game.state === 'idle' || this.game.state === 'win')
+        if (this.game.state === 'idle' || this.game.state === 'win' || this.game.state === 'lost')
             return;
         if (this.game.state === 'play') {
             this.game.pause();
@@ -622,12 +731,14 @@ class GameController {
     // ── UI 업데이트 ─────────────────────────────────────────────────────────
     _updateUI() {
         this.elMoves.textContent = String(this.game.moveCount);
-        this.elUndoBtn.disabled = !this.game.canUndo || this.game.state === 'win';
+        this.elUndoBtn.disabled = !this.game.canUndo || this.game.state === 'win' || this.game.state === 'lost';
+        this.elGiveUpBtn.disabled = this.game.state !== 'play' && this.game.state !== 'pause';
     }
     _hideAllOverlays() {
         this.startOverlay.classList.add('hidden');
         this.pauseOverlay.classList.add('hidden');
         this.winOverlay.classList.add('hidden');
+        this.failOverlay.classList.add('hidden');
         this.helpOverlay.classList.add('hidden');
         this.confirmOverlay.classList.add('hidden');
         this.gameNumberOverlay.classList.add('hidden');

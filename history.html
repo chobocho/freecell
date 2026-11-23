@@ -79,5 +79,21 @@
      실제 브라우저에서의 화면 동작은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 포기 버튼 + 패배 오버레이 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/src/freecell.ts</code>: 게임 상태 <code>lost</code>와 <code>giveUp()</code>을 추가했습니다.
+        포기한 판은 이동·되돌리기가 막히고, 같은 배열로 다시 하기 또는 새 게임으로만 벗어납니다.</li>
+    <li><code>src/webgame/src/main.ts</code>: 헤더 "✕ 포기" 버튼 → 확인 창 → 불·바람 이펙트 → 패배 오버레이
+        (게임 번호·이동 횟수·시간, "같은 판 다시 하기" / "새 게임").
+        포기하면 자동저장을 지워 이어하기 대상에서 제외합니다.</li>
+    <li>게임 번호 창을 열 때 예약된 승리/패배 오버레이 표시를 취소하도록 했습니다(겹쳐 뜨는 문제 방지).</li>
+    <li><code>src/webgame/test.mjs</code>: 포기 상태 테스트 14개 추가.</li>
+  </ul>
+  <p>검증: <code>tsc</code> 통과, <code>node test.mjs</code> 171/171 통과, <code>build.sh</code> 릴리스 빌드 성공.
+     실제 브라우저에서의 화면 동작은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>

@@ -135,6 +135,14 @@ html, body {
 }
 .btn-restart:hover { background: #4a148c; }
 
+.btn-giveup {
+  background: #b71c1c;
+  color: #fff;
+}
+.btn-giveup:hover { background: #7f0000; }
+.btn-giveup:disabled { opacity: 0.4; cursor: default; }
+.btn-giveup:disabled:hover { background: #b71c1c; }
+
 /* ─── 캔버스 영역 ────────────────────────────────────────── */
 #canvas-wrapper {
   flex: 1;
@@ -345,6 +353,14 @@ html, body {
   z-index: 20;
 }
 #save-toast.show { opacity: 1; }
+
+/* ─── 패배(포기) 화면 ───────────────────────────────────── */
+#fail-overlay {
+  background: radial-gradient(circle at center, rgba(183,28,28,0.2) 0%, rgba(0,0,0,0.8) 100%);
+}
+#fail-overlay h2 { color: #ef9a9a; }
+#fail-overlay p { text-align: center; line-height: 1.8; }
+#fail-overlay .btn.hidden { display: none; }
 
 /* ─── 승리 화면 ─────────────────────────────────────────── */
 #win-overlay {

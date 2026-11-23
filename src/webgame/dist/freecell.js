@@ -291,6 +291,17 @@ export class FreecellGame {
         if (this._state === 'pause')
             this._state = 'play';
     }
+    /**
+     * 진행 중인 판을 포기한다 (play/pause → lost).
+     * 카드 배치·이동 횟수·게임 번호는 그대로 두므로 결과 표시와 restart() 가 가능하다.
+     * @returns 포기 처리 여부 (진행 중인 판이 아니면 false)
+     */
+    giveUp() {
+        if (this._state !== 'play' && this._state !== 'pause')
+            return false;
+        this._state = 'lost';
+        return true;
+    }
     // ── 유틸리티 ────────────────────────────────────────────────────────────
     _isFoundation(idx) {
         return idx >= DeckIndex.Found1 && idx <= DeckIndex.Found4;

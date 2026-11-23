@@ -7,7 +7,8 @@ import type { GameSnapshot, SavedDeck, SavedMove } from './storage.js';
 
 // ─── 게임 상태 ──────────────────────────────────────────────────────────────
 
-export type GameState = 'idle' | 'play' | 'pause' | 'win';
+/** lost = 포기한 판 (이동/되돌리기 불가, restart() 또는 deal() 로만 벗어남) */
+export type GameState = 'idle' | 'play' | 'pause' | 'win' | 'lost';
 
 // ─── 이동 이력 ──────────────────────────────────────────────────────────────
 
@@ -336,6 +337,17 @@ export class FreecellGame {
 
   resume(): void {
     if (this._state === 'pause') this._state = 'play';
+  }
+
+  /**
+   * 진행 중인 판을 포기한다 (play/pause → lost).
+   * 카드 배치·이동 횟수·게임 번호는 그대로 두므로 결과 표시와 restart() 가 가능하다.
+   * @returns 포기 처리 여부 (진행 중인 판이 아니면 false)
+   */
+  giveUp(): boolean {
+    if (this._state !== 'play' && this._state !== 'pause') return false;
+    this._state = 'lost';
+    return true;
   }
 
   // ── 유틸리티 ────────────────────────────────────────────────────────────

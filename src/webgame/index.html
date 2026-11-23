@@ -36,6 +36,9 @@
         <button class="btn btn-restart" id="btn-restart" title="다시 하기">
           ♻ <span class="btn-label">다시 하기</span>
         </button>
+        <button class="btn btn-giveup" id="btn-give-up" disabled title="포기">
+          ✕ <span class="btn-label">포기</span>
+        </button>
         <button class="btn btn-new" id="btn-new" title="새 게임 (N)">
           ✦ <span class="btn-label">새 게임</span>
         </button>
@@ -154,6 +157,7 @@
             <tbody>
               <tr><td>드래그 앤 드롭</td>      <td>카드 이동</td></tr>
               <tr><td>더블클릭 / 더블탭</td>  <td>Foundation으로 자동 이동</td></tr>
+              <tr><td>✕ 포기 버튼</td>        <td>현재 판 포기 (같은 판 다시 하기 가능)</td></tr>
             </tbody>
           </table>
 
@@ -168,6 +172,20 @@
           <button class="btn btn-new" id="help-close-btn" style="margin-top:12px; padding:8px 24px;">
             닫기 (F1 / Esc)
           </button>
+        </div>
+      </div>
+
+      <!-- 패배 (포기) -->
+      <div class="overlay hidden" id="fail-overlay">
+        <h2>😞 게임 종료</h2>
+        <p>
+          <strong id="fail-game">-</strong> 판을 포기했습니다.<br>
+          이동 횟수: <strong id="fail-moves">0</strong>회 &nbsp;|&nbsp;
+          소요 시간: <strong id="fail-time">0:00</strong>
+        </p>
+        <div class="confirm-btns">
+          <button class="btn btn-restart" id="overlay-fail-retry-btn">♻ 같은 판 다시 하기</button>
+          <button class="btn btn-new" id="overlay-fail-new-btn">✦ 새 게임</button>
         </div>
       </div>
 

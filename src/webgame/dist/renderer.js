@@ -132,8 +132,9 @@ export class Renderer {
         const H = this.canvas.clientHeight;
         // 배경
         this._drawBackground(W, H);
-        // 실패 이펙트 중에는 보드를 숨김 (카드가 제자리에서 날아가는 효과)
-        if (!this._failAnimating) {
+        // 실패 이펙트 중에는 보드를 숨김 (카드가 제자리에서 날아가는 효과).
+        // 포기한 판(lost)은 이펙트가 끝난 뒤에도 카드가 되살아나 보이지 않도록 계속 숨긴다.
+        if (!this._failAnimating && game.state !== 'lost') {
             // 승리 이펙트 중에는 파운데이션 카드를 애니메이션 쪽에서 그림 (슬롯만 표시)
             this._drawFoundations(game, drag, this._winAnimActive);
             this._drawFreeCells(game, drag);

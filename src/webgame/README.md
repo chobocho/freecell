@@ -53,6 +53,7 @@ python3 -m http.server 8080
 |------|------|
 | 드래그 앤 드롭 | 카드 이동 |
 | 더블클릭 / 더블탭 | Foundation으로 자동 이동 |
+| ✕ 포기 버튼 | 현재 판 포기 → 결과 화면에서 같은 판 다시 하기 / 새 게임 |
 
 ### 키보드
 
@@ -102,7 +103,7 @@ webgame/
 ├── css/style.css
 ├── img/              # 카드 이미지 (52장 + 뒷면)
 ├── index.html
-├── test.mjs          # Node.js 유닛 테스트 (157개)
+├── test.mjs          # Node.js 유닛 테스트 (171개)
 ├── tsconfig.json
 ├── history.md        # 개발 이력
 └── Todo.md           # 요구사항 정의
