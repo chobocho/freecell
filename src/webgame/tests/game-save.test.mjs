@@ -199,3 +199,50 @@ test('범위 밖 무늬/숫자 거부', () => {
   const g2 = new FreecellGame();
   assertEqual(g2.restore(snap), null, '무늬 9는 거부');
 });
+
+suite('FreecellGame - 손상된 스냅샷 거부 (덱 수 / 이동 이력)');
+
+test('덱이 16개가 아니면 거부 (남는 덱의 카드가 조용히 사라지는 것 방지)', () => {
+  const g1 = new FreecellGame(); g1.deal(1);
+  const snap = g1.serialize(0);
+  // 52장은 그대로 두고 17번째 덱으로 한 장을 옮김
+  snap.decks.push({ cards: [snap.decks[DeckIndex.Tableau1].cards.pop()] });
+  assertEqual(new FreecellGame().restore(snap), null);
+});
+
+test('이동 이력의 덱 번호가 범위 밖이면 거부 (되돌리기에서 오류 방지)', () => {
+  const g1 = new FreecellGame(); g1.deal(1);
+  g1.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  const snap = g1.serialize(0);
+  snap.history[0].to = 99;
+  assertEqual(new FreecellGame().restore(snap), null);
+});
+
+test('이동 이력의 장수가 올바르지 않으면 거부', () => {
+  for (const count of [0, -1, 1.5, '1']) {
+    const g1 = new FreecellGame(); g1.deal(1);
+    g1.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+    const snap = g1.serialize(0);
+    snap.history[0].count = count;
+    assertEqual(new FreecellGame().restore(snap), null, `count=${count}`);
+  }
+});
+
+test('이동 횟수/경과 시간이 숫자가 아니면 0으로 복원', () => {
+  const g1 = new FreecellGame(); g1.deal(1);
+  const snap = g1.serialize(0);
+  snap.moveCount = 'x';
+  snap.elapsed = NaN;
+  const g2 = new FreecellGame();
+  assertEqual(g2.restore(snap), 0);
+  assertEqual(g2.moveCount, 0);
+});
+
+test('정상 스냅샷은 그대로 복원되고 되돌리기도 동작', () => {
+  const g1 = new FreecellGame(); g1.deal(1);
+  g1.moveCard(DeckIndex.Tableau1, DeckIndex.Free1, 1);
+  const g2 = new FreecellGame();
+  assertEqual(g2.restore(g1.serialize(7)), 7);
+  g2.undo();
+  assert(g2.getDeck(DeckIndex.Free1).isEmpty(), '되돌리기 후 FreeCell 비어 있음');
+});

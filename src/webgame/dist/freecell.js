@@ -402,6 +402,9 @@ export class FreecellGame {
      * 손상된 저장 데이터로 비정상 보드가 복원되는 것을 방지
      */
     static _validateDecks(decks) {
+        // 덱 수가 다르면 남는 덱의 카드가 복원에서 빠져 52장이 안 되는 보드가 된다
+        if (!Array.isArray(decks) || decks.length !== TOTAL_DECKS)
+            return false;
         const seen = new Set();
         for (const deckData of decks) {
             for (const c of deckData.cards) {
@@ -418,13 +421,24 @@ export class FreecellGame {
         return seen.size === 52;
     }
     /**
+     * 이동 이력 검증: 덱 번호가 범위 안이고 장수가 1 이상의 정수
+     * (범위 밖 번호가 남아 있으면 되돌리기에서 없는 덱을 건드려 오류가 난다)
+     */
+    static _validateHistory(history) {
+        if (!Array.isArray(history))
+            return false;
+        const isDeck = (v) => Number.isInteger(v) && v >= 0 && v < TOTAL_DECKS;
+        return history.every(h => isDeck(h.from) && isDeck(h.to) && Number.isInteger(h.count) && h.count >= 1);
+    }
+    /**
      * 스냅샷에서 게임 상태 복원
      * @returns 복원된 경과 시간(초), 실패 시 null
      */
     restore(snapshot) {
         try {
             // 손상된 스냅샷(카드 수/중복/범위 오류) 거부
-            if (!FreecellGame._validateDecks(snapshot.decks)) {
+            if (!FreecellGame._validateDecks(snapshot.decks) ||
+                !FreecellGame._validateHistory(snapshot.history)) {
                 this.reset();
                 return null;
             }
@@ -446,7 +460,9 @@ export class FreecellGame {
                 count: h.count,
                 didOpenCard: h.didOpenCard,
             }));
-            this._moveCount = snapshot.moveCount;
+            // 숫자가 아닌 값이 화면에 그대로 나오지 않도록 (이동 횟수·경과 시간은 표시용이라 0으로 대체)
+            const nonNegative = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0;
+            this._moveCount = Math.floor(nonNegative(snapshot.moveCount));
             this._state = snapshot.gameState === 'pause' ? 'pause' : 'play';
             this._gameNumber = snapshot.gameNumber ?? 0;
             // 초기 배열 복원 (이어하기 후 "다시 하기" 지원)
@@ -469,7 +485,7 @@ export class FreecellGame {
                 this._initialSnapshot = tmp.serialize(0);
             }
             // 둘 다 불가능하면 기존 _initialSnapshot 유지 (restart() 경로에서는 이미 올바른 값)
-            return snapshot.elapsed;
+            return nonNegative(snapshot.elapsed);
         }
         catch {
             this.reset();
