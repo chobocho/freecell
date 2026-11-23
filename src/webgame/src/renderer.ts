@@ -798,10 +798,18 @@ export class Renderer {
     this._failAnimating  = true;
     const { cardW, cardH } = this.layout;
 
-    for (let di = DeckIndex.Tableau1; di <= DeckIndex.Tableau8; di++) {
+    // 테이블 위의 모든 카드가 대상 — Tableau 뿐 아니라 FreeCell·Foundation 카드도 함께 날아간다.
+    // (이펙트 중에는 보드를 그리지 않으므로, 여기서 빠진 카드는 그냥 사라져 보인다)
+    // 각 덱은 아래 → 위 순서로 넣어, 대기 중인 카드를 배열 순서대로 그리면 쌓인 모양이 유지된다.
+    const decks: DeckIndex[] = [];
+    for (let di = DeckIndex.Tableau1; di <= DeckIndex.Tableau8; di++) decks.push(di);
+    for (let di = DeckIndex.Free1;    di <= DeckIndex.Free4;    di++) decks.push(di);
+    for (let di = DeckIndex.Found1;   di <= DeckIndex.Found4;   di++) decks.push(di);
+
+    for (const di of decks) {
       const deck = game.getDeck(di);
       for (let ci = 0; ci < deck.size(); ci++) {
-        const rect = this.getCardRect(di as DeckIndex, ci, game);
+        const rect = this.getCardRect(di, ci, game);
         this._failAnimCards.push({
           card: deck.get(ci),
           x: rect.x, y: rect.y,
@@ -825,8 +833,14 @@ export class Renderer {
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
 
+    // 1) 아직 날아가지 않은 카드는 제자리에 표시 (시작하자마자 전부 사라졌다가 하나씩 나타나는 것 방지)
     for (const c of this._failAnimCards) {
       c.elapsed += dt;
+      if (c.elapsed < c.delay) this._drawCard(c.card, c.x, c.y);
+    }
+
+    // 2) 날아가는 카드: 대기 중인 카드 위에 그림
+    for (const c of this._failAnimCards) {
       if (c.elapsed < c.delay) continue;
 
       c.vx    *= Math.pow(0.99, f);
