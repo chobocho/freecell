@@ -128,7 +128,7 @@ webgame/
 ├── index.html
 ├── build.sh / build.bat  # 릴리스 빌드 (tsc → esbuild → bundle.js)
 ├── bundle.js         # JS·CSS·이미지를 release/index.html 하나로 조립
-├── tests/            # Node.js 유닛 테스트 (232개, node --test)
+├── tests/            # Node.js 유닛 테스트 (236개, node --test)
 │   ├── helpers.mjs         # 공용 도우미 (suite/test/assert, 가짜 입력 환경)
 │   ├── deck.test.mjs       # 카드, 덱
 │   ├── game.test.mjs       # 게임 규칙 (이동, 되돌리기, 승리, 자동 이동)
@@ -136,7 +136,7 @@ webgame/
 │   ├── game-save.test.mjs  # 저장 / 복원
 │   ├── input.test.mjs      # 키보드 / 터치 입력
 │   ├── renderer.test.mjs   # 패배 이펙트
-│   ├── main.test.mjs       # 게임 컨트롤러 (다시 하기 이펙트, 경과 시간, 되돌리기)
+│   ├── main.test.mjs       # 게임 컨트롤러 (다시 하기 이펙트, 버튼 상태, 경과 시간, 되돌리기)
 │   ├── sound.test.mjs      # 사운드 초기화 / 재생
 │   ├── dom.test.mjs        # 필수 DOM 요소 조회
 │   ├── lfsr.test.mjs       # 게임 번호 순환

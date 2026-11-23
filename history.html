@@ -212,5 +212,19 @@
   </ul>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 브라우저에서 직접 확인 후 개선</h2>
+  <p class="date">2026-11-24</p>
+  <ul>
+    <li>Chrome에서 릴리스 빌드를 직접 눌러 보며 이전 수정(다시 하기 중복 실행, 오른쪽 클릭 드래그 등)을 확인했습니다.</li>
+    <li><code>src/webgame/src/main.ts</code>: 다시 하기 이펙트를 최대 8초만 기다립니다. 화면 갱신이 느린 환경에서 판이 멈춘 것처럼 보였습니다.</li>
+    <li><code>main.ts</code>, <code>index.html</code>, <code>css/style.css</code>: 눌러도 동작하지 않는 상태의 일시정지·다시 하기·되돌리기·포기 버튼을 끕니다.</li>
+    <li><code>css/style.css</code>: 도움말의 키 묶음이 두 줄로 갈라지지 않습니다.</li>
+    <li>테스트 4개 추가.</li>
+  </ul>
+  <p>검증: <code>node --test</code> 236/236 통과, <code>build.sh</code> 빌드 성공, Chrome에서 버튼 상태와 도움말 확인.
+     8초 상한이 걸리는 상황과 좁은 화면은 브라우저에서 확인하지 못했습니다.</p>
+</div>
+
 </body>
 </html>
