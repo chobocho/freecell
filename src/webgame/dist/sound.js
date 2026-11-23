@@ -10,17 +10,33 @@ export class SoundManager {
         this.buffers = new Map();
         this._muted = false;
         this._initialized = false;
+        /** 진행 중인 초기화 (연달아 호출돼도 AudioContext 를 하나만 만들기 위함) */
+        this._initPromise = null;
     }
     /** 첫 사용자 제스처 후 초기화 (자동재생 정책 대응) */
-    async init() {
+    init() {
         if (this._initialized)
-            return;
+            return Promise.resolve();
+        if (!this._initPromise) {
+            this._initPromise = this._doInit().finally(() => { this._initPromise = null; });
+        }
+        return this._initPromise;
+    }
+    async _doInit() {
         try {
-            this.ctx = new AudioContext();
+            const ctx = new AudioContext();
+            // iOS Safari 등은 사용자 제스처 안에서 만들어도 suspended 로 시작할 수 있다.
+            // init 은 클릭/키 입력 처리 중에 불리므로, 제스처가 유효한 지금 재개를 요청한다.
+            // (재개가 끝나기를 기다리지는 않음 — 끝나지 않는 환경에서 초기화가 멈추는 것 방지)
+            if (ctx.state === 'suspended') {
+                ctx.resume().catch(() => { });
+            }
+            this.ctx = ctx;
             await this._generateSounds();
             this._initialized = true;
         }
         catch (e) {
+            this.ctx = null;
             console.warn('Web Audio API 초기화 실패:', e);
         }
     }
