@@ -132,12 +132,23 @@ const restart = () => { el('btn-restart').click(); el('confirm-yes-btn').click()
 
 // ─── 테스트 ──────────────────────────────────────────────────────────────────
 
+suite('헤더 버튼 활성 상태');
+
+const disabled = (id) => el(id).disabled;
+
+test('시작 화면에서는 일시정지/다시 하기/포기 버튼이 꺼져 있음', () => {
+  assert(disabled('btn-pause'), '일시정지');
+  assert(disabled('btn-restart'), '다시 하기');
+  assert(disabled('btn-give-up'), '포기');
+});
+
 suite('다시 하기 이펙트 중 입력');
 
 test('게임을 시작하면 게임 타이머가 하나 돈다', async () => {
   await startGame();
   assertEqual(intervals(1000), 1, '게임 타이머');
   assertEqual(intervals(100), 0, '다시 하기 대기 없음');
+  assert(!disabled('btn-pause') && !disabled('btn-restart') && !disabled('btn-give-up'), '버튼 켜짐');
 });
 
 test('이펙트 중 다시 하기를 또 눌러도 대기 타이머는 하나뿐', () => {
@@ -146,6 +157,7 @@ test('이펙트 중 다시 하기를 또 눌러도 대기 타이머는 하나뿐
   restart();
   restart();
   assertEqual(intervals(100), 1, '대기 타이머가 겹치지 않아야 함');
+  assert(disabled('btn-pause') && disabled('btn-restart') && disabled('btn-give-up'), '이펙트 중 버튼 꺼짐');
 });
 
 test('이펙트 중에는 일시정지 버튼으로 게임이 재개되지 않음', () => {
@@ -167,6 +179,26 @@ test('이펙트가 끝나면 한 번만 다시 시작하고 대기 타이머가 
   assertEqual(intervals(1000), 1, '게임 타이머 재개');
   advance(1000);
   assertEqual(intervals(100), 0, '이후에도 다시 시작이 반복되지 않음');
+  assert(!disabled('btn-pause') && !disabled('btn-restart') && !disabled('btn-give-up'), '버튼 다시 켜짐');
+});
+
+test('화면 갱신이 멈춰 이펙트가 끝나지 않아도 8초 뒤에는 다시 시작', () => {
+  restart();
+  advance(7900);     // 화면은 한 프레임도 그리지 않음
+  assertEqual(intervals(100), 1, '아직 대기 중');
+  advance(300);
+  assertEqual(intervals(100), 0, '대기 종료');
+  assertEqual(intervals(1000), 1, '게임 타이머 재개');
+  assert(!disabled('btn-pause'), '버튼 다시 켜짐');
+});
+
+test('포기한 판에서는 일시정지는 꺼지고 다시 하기는 켜짐', () => {
+  el('btn-give-up').click();
+  el('confirm-yes-btn').click();
+  assert(disabled('btn-pause'), '일시정지');
+  assert(!disabled('btn-restart'), '다시 하기');
+  el('btn-restart').click(); // 확인 없이 같은 판 다시 시작
+  assert(!disabled('btn-pause'), '다시 시작 후 일시정지 켜짐');
 });
 
 test('다시 시작한 뒤에는 일시정지/재개가 정상 동작', () => {
@@ -242,4 +274,16 @@ test('일시정지 중 페이지를 닫아도 멈춘 동안의 시간은 더해�
   await tick();
   assert(near(saved.get('autosave').elapsed, 1.5), `실제 ${saved.get('autosave').elapsed}`);
   el('btn-pause').click();
+});
+
+suite('되돌리기 버튼 활성 상태');
+
+test('일시정지 중에는 되돌리기 버튼이 꺼지고, 재개하면 다시 켜짐', () => {
+  newGame(1);
+  key('Digit1'); key('KeyU');
+  assert(!el('btn-undo').disabled, '이동 후 켜짐');
+  el('btn-pause').click();
+  assert(el('btn-undo').disabled, '일시정지 중 꺼짐');
+  el('btn-pause').click();
+  assert(!el('btn-undo').disabled, '재개 후 켜짐');
 });

@@ -66,6 +66,7 @@ class GameController {
         this._bindButtons();
         this._bindResize();
         this._bindPageHide();
+        this._updateUI(); // 시작 화면의 버튼 활성 상태
         this._loop();
         // 저장된 게임이 있으면 이어하기 버튼 활성화
         await this._checkSavedGame();
@@ -90,13 +91,14 @@ class GameController {
         this.elConfirmYesBtn = req('confirm-yes-btn');
         this.failOverlay = req('fail-overlay');
         this.elGiveUpBtn = req('btn-give-up');
+        this.elRestartBtn = req('btn-restart');
         this.elAutoBtn = req('btn-auto-complete');
         this.gameNumberOverlay = req('game-number-overlay');
         this.elGameNumberInput = req('game-number-input');
     }
     _bindButtons() {
         req('btn-new').addEventListener('click', () => this._requestNewGame());
-        req('btn-restart').addEventListener('click', () => this._requestRestart());
+        this.elRestartBtn.addEventListener('click', () => this._requestRestart());
         this.elUndoBtn.addEventListener('click', () => this._undo());
         this.elPauseBtn.addEventListener('click', () => this._togglePause());
         // 음소거 토글
@@ -566,10 +568,14 @@ class GameController {
         // 실패 이펙트 시작 (현재 카드 배치에서 불타며 날아감)
         this.sound.play('lose');
         this.renderer.startFailEffect(this.game);
-        // 애니메이션 완료 후 동일 배열로 재시작
+        // 애니메이션 완료 후 동일 배열로 재시작.
+        // 화면 갱신이 느리거나 멈춘 환경(가려진 창 등)에서는 이펙트가 끝나지 않으므로 최대 8초만 기다린다
+        // — 기다리는 동안은 입력을 받지 않아, 상한이 없으면 판이 멈춘 것처럼 보인다.
+        const startedAt = Date.now();
         this._restartPollTimer = window.setInterval(() => {
-            if (!this.renderer.isFailAnimating) {
+            if (!this.renderer.isFailAnimating || Date.now() - startedAt > 8000) {
                 this._cancelRestartPoll();
+                this.renderer.stopEffects();
                 this.game.restart();
                 this.elapsed = 0;
                 this._startTimer();
@@ -578,6 +584,7 @@ class GameController {
                 this._scheduleSave();
             }
         }, 100);
+        this._updateUI(); // 기다리는 동안 버튼 비활성
     }
     /**
      * 다시 하기 이펙트가 끝나길 기다리는 중인지.
@@ -788,8 +795,14 @@ class GameController {
     // ── UI 업데이트 ─────────────────────────────────────────────────────────
     _updateUI() {
         this.elMoves.textContent = String(this.game.moveCount);
-        this.elUndoBtn.disabled = !this.game.canUndo || this.game.state === 'win' || this.game.state === 'lost';
-        this.elGiveUpBtn.disabled = this.game.state !== 'play' && this.game.state !== 'pause';
+        // 되돌리기는 진행 중(play)일 때만 동작한다 — 일시정지·다시 하기 이펙트 중에도 꺼 둔다
+        this.elUndoBtn.disabled = !this.game.canUndo || this.game.state !== 'play';
+        // 지금 눌러도 아무 일도 일어나지 않는 버튼은 꺼 둔다
+        const state = this.game.state;
+        const ongoing = (state === 'play' || state === 'pause') && !this._restartPending;
+        this.elGiveUpBtn.disabled = !ongoing;
+        this.elPauseBtn.disabled = !ongoing;
+        this.elRestartBtn.disabled = !((ongoing || state === 'lost') && this.game.canRestart);
         this.elAutoBtn.disabled = this._autoCompleting || !this.game.hasFoundationMove();
     }
     _hideAllOverlays() {

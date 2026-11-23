@@ -136,12 +136,16 @@ html, body {
   color: #fff;
 }
 .btn-pause:hover { background: #e65100; }
+.btn-pause:disabled { opacity: 0.4; cursor: default; }
+.btn-pause:disabled:hover { background: #f57c00; }
 
 .btn-restart {
   background: #6a1b9a;
   color: #fff;
 }
 .btn-restart:hover { background: #4a148c; }
+.btn-restart:disabled { opacity: 0.4; cursor: default; }
+.btn-restart:disabled:hover { background: #6a1b9a; }
 
 .btn-giveup {
   background: #b71c1c;
@@ -434,6 +438,11 @@ html, body {
   padding: 5px 8px;
   color: #e8f5e9;
   vertical-align: middle;
+}
+
+/* 키 칸은 줄바꿈하지 않는다 (Q W E R 같은 키 묶음이 두 줄로 갈라지지 않도록) */
+.help-table td:first-child {
+  white-space: nowrap;
 }
 
 .help-table tr:hover td {
