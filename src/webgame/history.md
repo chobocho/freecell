@@ -401,3 +401,31 @@ node test.mjs  # 유닛 테스트 실행
 - 테스트 9개 추가 (게임 로직 7, 입력 2) → **합계 180개 전체 통과**, `build.sh` 릴리스 빌드 성공
 - 미확인: 실제 브라우저에서의 화면 동작. 헤더 버튼이 7개가 되어 좁은 화면에서의 줄바꿈 확인 필요
 - 테스트로 다루지 못한 부분: `main.ts`의 진행 루프(타이머)와 버튼 활성 상태 갱신은 DOM이 필요해 자동 테스트가 없음
+
+### 릴리스 빌드를 esbuild IIFE 번들로 전환 (solitaire_web 참고)
+
+**build.sh / build.bat** (수정)
+- 빌드 순서: `tsc` → esbuild로 `dist/main.js`를 IIFE 하나로 묶음 → `bundle.js`가 단일 HTML로 조립
+- esbuild 명령은 `ESBUILD` 환경 변수로 바꿀 수 있음 (기본 `npx --yes esbuild`, 처음 한 번 내려받음)
+- solitaire_web은 `src/main.ts`를 묶지만, 여기서는 `dist/main.js`를 묶음 → 테스트가 검증한 것과 같은 코드가 릴리스에 들어감
+
+**bundle.js** (재작성)
+- 삭제: 수동 모듈 순서 목록(`MODULE_ORDER`), 정규식으로 import/export를 지우던 처리, 번들 안의 이미지 로더 줄을 정규식으로 바꿔치던 처리
+- 조립 로직을 `assemble()` 함수로 분리해 테스트 가능하게 함
+- 빌드 실패로 처리하는 경우 추가: index.html에 교체할 태그가 없음 / 번들에 `</script`가 있음 / import·export가 남아 있음 / 번들 문법 오류
+- 넣는 코드에 `$&`, `$1` 같은 문자열이 있어도 바뀌지 않도록 치환 방식을 함수로 변경
+- 릴리스 스크립트는 `<script type="module">` 대신 일반 `<script>`(IIFE, strict)
+
+**src/renderer.ts** (수정)
+- `loadImages()`가 내장 이미지 맵(`window.__IMG__`)을 직접 확인 → 빌드 때 코드를 고쳐 쓰지 않아도 됨. 맵이 없으면(개발 실행) 기존대로 `img/`에서 불러옴
+
+**test.mjs / README.md** (수정)
+- 테스트 7개 추가 (`loadImages` 2, `assemble` 5) → **합계 187개 전체 통과**
+- README에 릴리스 빌드 방법 추가
+
+**검증**
+- `build.sh`, `build.bat` 모두 실행해 `release/index.html` 생성 확인 (캐시된 esbuild 0.28.2, `--no-install`)
+- 솔버는 번들에 없음, 난이도 표는 포함. 릴리스 크기 220.7KB (이전과 비슷)
+- 릴리스 파일을 로컬 서버(127.0.0.1)로 띄워 Chrome에서 확인: 콘솔 오류 없음, 서버 요청은 index.html뿐(이미지 내장 동작),
+  난이도 "하" 새 게임, 키보드 이동, `A` 자동 올리기, 포기 → 패배 화면 → 같은 판 다시 하기까지 정상
+- 미확인: esbuild를 처음 내려받는 경로(`npx --yes`), 좁은 화면 레이아웃(창이 최대화 상태라 크기 변경 불가), 터치 입력

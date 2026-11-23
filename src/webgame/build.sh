@@ -7,29 +7,47 @@ cd "$SCRIPT_DIR"
 RELEASE_DIR="release"
 OUT_HTML="$RELEASE_DIR/index.html"
 
+# esbuild command. Default downloads esbuild through npx on first use (needs
+# network once; cached afterwards). Override to use an installed copy, e.g.
+#   ESBUILD="esbuild" bash build.sh
+#   ESBUILD="npx --no-install esbuild" bash build.sh   # never download
+ESBUILD="${ESBUILD:-npx --yes esbuild}"
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
 echo "========================================="
 echo " FreeCell Web - Single-File Release Build"
 echo "========================================="
 echo
 
-# Step 1: TypeScript compile
-echo "[1/3] Compiling TypeScript..."
+# Step 1: TypeScript compile (type-check + emit dist/*.js)
+echo "[1/4] Compiling TypeScript..."
 tsc
 echo "       Done."
 
-# Step 2: Clean release folder
-echo "[2/3] Cleaning release folder..."
+# Step 2: Bundle all modules into one IIFE.
+#         esbuild follows the imports from dist/main.js, so module order and
+#         import/export removal need no manual list.
+echo "[2/4] Bundling JS (esbuild)..."
+$ESBUILD dist/main.js \
+  --bundle --format=iife --target=es2020 --charset=utf8 --log-level=warning \
+  --outfile="$TMP_DIR/bundle.js"
+echo "       Done."
+
+# Step 3: Clean release folder
+echo "[3/4] Cleaning release folder..."
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"
 echo "       Done."
 
-# Step 3: Bundle everything into a single self-contained index.html
+# Step 4: Inline everything into a single self-contained index.html
 #         - CSS  -> inlined <style>
-#         - JS   -> all ES modules concatenated into one <script type="module">
+#         - JS   -> the IIFE bundle in one <script>
 #         - IMG  -> every img/*.png embedded as base64 data URI
 #         (sounds are generated at runtime via Web Audio API, no files needed)
-echo "[3/3] Bundling into single index.html..."
-node bundle.js
+echo "[4/4] Inlining into single index.html..."
+node bundle.js "$TMP_DIR/bundle.js"
 echo "       Done."
 echo
 

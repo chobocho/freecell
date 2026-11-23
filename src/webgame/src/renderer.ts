@@ -96,13 +96,17 @@ export async function loadImages(baseUrl: string = 'img/'): Promise<ImageMap> {
   const extras = ['abg']; // 카드 뒷면 이미지만 추가 로드
   const allNames = [...IMAGE_NAMES, ...extras];
 
+  // 단일 파일 릴리스(bundle.js)는 이미지를 data URI 맵(window.__IMG__)으로 내장한다.
+  // 맵에 있으면 그것을 쓰고, 없으면(개발 실행) img/ 폴더에서 불러온다.
+  const embedded = (globalThis as { __IMG__?: Record<string, string> }).__IMG__;
+
   const map: ImageMap = new Map();
   const promises = allNames.map(name =>
     new Promise<void>((resolve) => {
       const img = new Image();
       img.onload  = () => { map.set(name, img); resolve(); };
       img.onerror = () => { resolve(); }; // 실패해도 계속 진행
-      img.src = `${baseUrl}${name}.png`;
+      img.src = embedded?.[name] ?? `${baseUrl}${name}.png`;
     })
   );
   await Promise.all(promises);

@@ -30,6 +30,19 @@ tsc
 tsc --watch
 ```
 
+### 릴리스 빌드 (단일 HTML 파일)
+
+```bash
+bash build.sh      # Windows: build.bat
+```
+
+`release/index.html` 하나에 JS·CSS·카드 이미지를 모두 넣습니다. 이 파일만 있으면 브라우저에서 바로 열립니다.
+
+- JS는 [esbuild](https://esbuild.github.io/)가 `dist/main.js`에서 import를 따라가 하나의 IIFE로 묶습니다. `src/`에 모듈을 추가해도 빌드 스크립트를 고칠 필요가 없습니다.
+- esbuild는 기본적으로 `npx`로 실행하며, 처음 한 번은 인터넷에서 내려받습니다(이후 캐시 사용).
+- 설치된 esbuild를 쓰거나 내려받기를 막으려면 `ESBUILD` 환경 변수를 지정합니다.
+  예: `ESBUILD="npx --no-install esbuild" bash build.sh`
+
 ### 테스트
 
 ```bash
@@ -104,7 +117,9 @@ webgame/
 ├── css/style.css
 ├── img/              # 카드 이미지 (52장 + 뒷면)
 ├── index.html
-├── test.mjs          # Node.js 유닛 테스트 (180개)
+├── build.sh / build.bat  # 릴리스 빌드 (tsc → esbuild → bundle.js)
+├── bundle.js         # JS·CSS·이미지를 release/index.html 하나로 조립
+├── test.mjs          # Node.js 유닛 테스트 (187개)
 ├── tsconfig.json
 ├── history.md        # 개발 이력
 └── Todo.md           # 요구사항 정의
@@ -116,5 +131,5 @@ webgame/
 - **렌더링**: HTML5 Canvas 2D API
 - **저장**: IndexedDB
 - **사운드**: Web Audio API
-- **빌드**: tsc (외부 번들러 없음)
+- **빌드**: tsc (개발) / tsc + esbuild (릴리스 단일 파일, 빌드 시에만 사용)
 - **테스트**: Node.js ES module (`node test.mjs`)

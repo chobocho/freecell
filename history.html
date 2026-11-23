@@ -109,5 +109,21 @@
      실제 브라우저에서의 화면 동작은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 릴리스 빌드를 esbuild IIFE 번들로 전환 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/build.sh</code>, <code>build.bat</code>: <code>tsc</code> → esbuild(<code>dist/main.js</code>를 IIFE 하나로) →
+        <code>bundle.js</code> 순서로 바꿨습니다. esbuild 명령은 <code>ESBUILD</code> 환경 변수로 바꿀 수 있습니다.</li>
+    <li><code>src/webgame/bundle.js</code>: 수동 모듈 순서 목록과 정규식 import/export 제거를 없앴습니다.
+        교체할 태그가 없거나 번들이 잘못되면 빌드가 실패합니다.</li>
+    <li><code>src/webgame/src/renderer.ts</code>: 내장 이미지 맵을 코드에서 직접 확인합니다(빌드 때 코드 치환 불필요).</li>
+    <li><code>src/webgame/test.mjs</code>: 테스트 7개 추가.</li>
+  </ul>
+  <p>검증: <code>node test.mjs</code> 187/187 통과, <code>build.sh</code>·<code>build.bat</code> 빌드 성공.
+     릴리스 파일을 Chrome에서 열어 새 게임(난이도), 키보드 이동, 자동 올리기, 포기, 같은 판 다시 하기를 확인했습니다.
+     좁은 화면과 터치 입력은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>
