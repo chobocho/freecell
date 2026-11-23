@@ -5,6 +5,7 @@ import { SoundManager } from './sound.js';
 import { GameStorage, formatSavedAt } from './storage.js';
 import { nextGameNumber, randomLfsrState } from './lfsr.js';
 import { DIFFICULTIES, DIFFICULTY_LABEL, isDifficulty, difficultyOf, nextGameNumberOfDifficulty, } from './difficulty.js';
+import { req } from './dom.js';
 const LEVEL_CHOICES = ['random', ...DIFFICULTIES];
 const LEVEL_PREF_KEY = 'freecell-difficulty';
 // ─── 게임 컨트롤러 ────────────────────────────────────────────────────────
@@ -70,43 +71,43 @@ class GameController {
         await this._checkSavedGame();
     }
     _setupDOM() {
-        this.canvas = document.getElementById('game-canvas');
-        this.elMoves = document.getElementById('moves-value');
-        this.elTimer = document.getElementById('timer-value');
-        this.elUndoBtn = document.getElementById('btn-undo');
-        this.elPauseBtn = document.getElementById('btn-pause');
-        this.startOverlay = document.getElementById('start-overlay');
-        this.pauseOverlay = document.getElementById('pause-overlay');
-        this.winOverlay = document.getElementById('win-overlay');
-        this.elWinMoves = document.getElementById('win-moves');
-        this.elWinTime = document.getElementById('win-time');
-        this.resumeBtn = document.getElementById('overlay-continue-btn');
-        this.elSavedInfo = document.getElementById('saved-info');
-        this.elSaveToast = document.getElementById('save-toast');
-        this.helpOverlay = document.getElementById('help-overlay');
-        this.confirmOverlay = document.getElementById('confirm-overlay');
-        this.elConfirmMsg = document.getElementById('confirm-msg');
-        this.elConfirmYesBtn = document.getElementById('confirm-yes-btn');
-        this.failOverlay = document.getElementById('fail-overlay');
-        this.elGiveUpBtn = document.getElementById('btn-give-up');
-        this.elAutoBtn = document.getElementById('btn-auto-complete');
-        this.gameNumberOverlay = document.getElementById('game-number-overlay');
-        this.elGameNumberInput = document.getElementById('game-number-input');
+        this.canvas = req('game-canvas');
+        this.elMoves = req('moves-value');
+        this.elTimer = req('timer-value');
+        this.elUndoBtn = req('btn-undo');
+        this.elPauseBtn = req('btn-pause');
+        this.startOverlay = req('start-overlay');
+        this.pauseOverlay = req('pause-overlay');
+        this.winOverlay = req('win-overlay');
+        this.elWinMoves = req('win-moves');
+        this.elWinTime = req('win-time');
+        this.resumeBtn = req('overlay-continue-btn');
+        this.elSavedInfo = req('saved-info');
+        this.elSaveToast = req('save-toast');
+        this.helpOverlay = req('help-overlay');
+        this.confirmOverlay = req('confirm-overlay');
+        this.elConfirmMsg = req('confirm-msg');
+        this.elConfirmYesBtn = req('confirm-yes-btn');
+        this.failOverlay = req('fail-overlay');
+        this.elGiveUpBtn = req('btn-give-up');
+        this.elAutoBtn = req('btn-auto-complete');
+        this.gameNumberOverlay = req('game-number-overlay');
+        this.elGameNumberInput = req('game-number-input');
     }
     _bindButtons() {
-        document.getElementById('btn-new').addEventListener('click', () => this._requestNewGame());
-        document.getElementById('btn-restart').addEventListener('click', () => this._requestRestart());
+        req('btn-new').addEventListener('click', () => this._requestNewGame());
+        req('btn-restart').addEventListener('click', () => this._requestRestart());
         this.elUndoBtn.addEventListener('click', () => this._undo());
         this.elPauseBtn.addEventListener('click', () => this._togglePause());
         // 음소거 토글
-        const muteBtn = document.getElementById('btn-mute');
+        const muteBtn = req('btn-mute');
         muteBtn.addEventListener('click', () => {
             this.sound.toggleMute();
             muteBtn.textContent = this.sound.muted ? '🔇' : '🔊';
             muteBtn.title = this.sound.muted ? '소리 켜기' : '소리 끄기';
         });
         // 시작 화면
-        document.getElementById('overlay-start-btn').addEventListener('click', async () => {
+        req('overlay-start-btn').addEventListener('click', async () => {
             await this.sound.init();
             this._showGameNumberDialog();
         });
@@ -116,32 +117,32 @@ class GameController {
             await this._continueGame();
         });
         // 일시정지 재개
-        document.getElementById('overlay-resume-btn').addEventListener('click', () => {
+        req('overlay-resume-btn').addEventListener('click', () => {
             this._togglePause();
         });
         // 승리 후 새 게임
-        document.getElementById('overlay-win-new-btn').addEventListener('click', () => {
+        req('overlay-win-new-btn').addEventListener('click', () => {
             this._showGameNumberDialog();
         });
         // 포기
         this.elGiveUpBtn.addEventListener('click', () => this._requestGiveUp());
         this.elAutoBtn.addEventListener('click', () => this._requestAutoComplete());
         // 포기 후: 같은 판 다시 하기 / 새 게임
-        document.getElementById('overlay-fail-retry-btn').addEventListener('click', () => {
+        req('overlay-fail-retry-btn').addEventListener('click', () => {
             this._restartSameDeal();
         });
-        document.getElementById('overlay-fail-new-btn').addEventListener('click', () => {
+        req('overlay-fail-new-btn').addEventListener('click', () => {
             this._showGameNumberDialog();
         });
         // 도움말 닫기
-        document.getElementById('help-close-btn').addEventListener('click', () => {
+        req('help-close-btn').addEventListener('click', () => {
             this._toggleHelp();
         });
         // 게임 번호 선택
-        document.getElementById('game-number-start-btn').addEventListener('click', () => {
+        req('game-number-start-btn').addEventListener('click', () => {
             this._onGameNumberStart();
         });
-        document.getElementById('game-number-cancel-btn').addEventListener('click', () => {
+        req('game-number-cancel-btn').addEventListener('click', () => {
             this._onGameNumberCancel();
         });
         // 난이도 선택 (번호를 비워둔 새 게임에 적용)
@@ -161,7 +162,7 @@ class GameController {
                 this._onGameNumberCancel();
         });
         // 새 게임 / 다시 하기 확인 팝업
-        document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+        req('confirm-yes-btn').addEventListener('click', () => {
             this.confirmOverlay.classList.add('hidden');
             if (this._confirmAction === 'restart') {
                 this._doRestart();
@@ -173,7 +174,7 @@ class GameController {
                 this._showGameNumberDialog();
             }
         });
-        document.getElementById('confirm-no-btn').addEventListener('click', () => {
+        req('confirm-no-btn').addEventListener('click', () => {
             this.confirmOverlay.classList.add('hidden');
             if (this._confirmFromPause) {
                 // 원래 일시정지 상태였으면 → 일시정지 화면 복원
@@ -477,11 +478,11 @@ class GameController {
         this._hideAllOverlays();
         this._updateUI();
         const n = this.game.gameNumber;
-        document.getElementById('fail-game').textContent = n > 0 ? `#${n}` : '랜덤';
-        document.getElementById('fail-moves').textContent = String(this.game.moveCount);
-        document.getElementById('fail-time').textContent = this._formatTime(this.elapsed);
+        req('fail-game').textContent = n > 0 ? `#${n}` : '랜덤';
+        req('fail-moves').textContent = String(this.game.moveCount);
+        req('fail-time').textContent = this._formatTime(this.elapsed);
         // 초기 배열을 모르는 판(옛 저장본의 번호 없는 게임)은 같은 판 다시 하기를 숨김
-        document.getElementById('overlay-fail-retry-btn')
+        req('overlay-fail-retry-btn')
             .classList.toggle('hidden', !this.game.canRestart);
         this.sound.play('lose');
         this.renderer.startFailEffect(this.game);
