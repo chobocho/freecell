@@ -450,3 +450,25 @@ node test.mjs  # 유닛 테스트 실행
 - `build.sh` 빌드 성공: 223.4KB (이전 220.7KB), 이미지 53장 + 파비콘 내장
 - 릴리스 파일을 Chrome에서 확인: 파비콘이 192×192 이미지로 읽히고, 콘솔 오류 없음, 서버 요청은 index.html 하나뿐(이전에는 favicon.ico 요청이 404)
 - 미확인: 브라우저 탭에 실제로 표시된 모양(자동화 화면에 탭 영역이 잡히지 않음), `build.bat`은 이번 변경 후 다시 실행하지 않음(변경은 공용 `bundle.js`에만 있음)
+
+### 테스트 파일 분리 + `node --test` 전환 (solitaire_web 참고)
+
+**tests/** (신규) / **test.mjs** (삭제)
+- 한 파일(1946줄)이던 `test.mjs`를 주제별 10개 파일로 분리: deck, game, game-number, game-save, input, lfsr, solver, difficulty, storage, build
+- 직접 만든 테스트 프레임워크(통과/실패 집계, 색상 출력)를 없애고 Node.js 내장 러너 `node --test` 사용
+- `tests/helpers.mjs`: `suite()/test()/testAsync()/assert()/assertEqual()`를 `node:test` 위에 얇게 구현 → 테스트 본문은 한 줄도 고치지 않고 그대로 옮김
+  - 테스트 이름은 "묶음 이름 › 설명"으로 보고됨
+  - 여러 파일이 함께 쓰는 `makeOpen`, `makeInputEnv`, `touchOnTop`도 이곳으로 이동
+- 실행: `tsc && node --test` (전체), `node --test tests/solver.test.mjs` (파일 하나)
+- solitaire_web은 `node:test`의 `describe/it`와 `node:assert`를 직접 쓰지만, 여기서는 기존 190개 테스트를 그대로 보존하는 쪽을 택함
+
+**효과**
+- 파일별로 별도 프로세스에서 병렬 실행 → 전체 실행 시간이 약 1.2초로 줄어듦
+- 가짜 `window`, `Image`, `indexedDB` 같은 전역 조작이 다른 파일의 테스트에 영향을 주지 않음
+- 실패한 테스트만 골라 실행(`--test-name-pattern`)하는 등 표준 러너 기능 사용 가능
+
+**검증**
+- 분리 전후 테스트 수 동일: 190개 → 190개, 전체 통과
+- 일부러 실패하는 테스트를 넣어 종료 코드가 1이 되는 것 확인(확인 후 삭제), 통과 시 0
+- 분리 스크립트가 넣은 import 중 쓰이지 않는 것 2개 제거
+- `test.html`(브라우저용 옛 테스트 페이지)은 `test.mjs`와 별개의 사본이라 건드리지 않음. 최근 테스트는 반영되어 있지 않음

@@ -139,5 +139,17 @@
      탭에 표시된 실제 모양은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 테스트 파일 분리 + node --test 전환 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-24</p>
+  <ul>
+    <li><code>src/webgame/test.mjs</code>(1946줄)를 <code>src/webgame/tests/*.test.mjs</code> 10개 파일로 나눴습니다.</li>
+    <li>직접 만든 테스트 프레임워크 대신 Node.js 내장 러너를 씁니다. 실행: <code>tsc &amp;&amp; node --test</code>.</li>
+    <li><code>tests/helpers.mjs</code>가 기존 <code>suite/test/assert</code> 호출 형태를 유지해, 테스트 본문은 고치지 않고 옮겼습니다.</li>
+    <li>파일별 병렬 실행으로 전체 실행 시간이 약 1.2초로 줄었습니다.</li>
+  </ul>
+  <p>검증: 분리 전후 190개로 동일, 전체 통과. 실패 시 종료 코드 1, 통과 시 0 확인.</p>
+</div>
+
 </body>
 </html>

@@ -46,8 +46,15 @@ bash build.sh      # Windows: build.bat
 ### 테스트
 
 ```bash
-node test.mjs
+# 전체 테스트 (먼저 tsc 로 dist/ 를 갱신)
+tsc && node --test
+
+# 파일 하나만
+node --test tests/solver.test.mjs
 ```
+
+테스트는 `tests/*.test.mjs`에 주제별로 나뉘어 있고, Node.js 내장 테스트 러너(`node --test`)로 실행합니다.
+파일마다 별도 프로세스에서 병렬로 실행됩니다.
 
 ### 플레이
 
@@ -120,7 +127,18 @@ webgame/
 ├── index.html
 ├── build.sh / build.bat  # 릴리스 빌드 (tsc → esbuild → bundle.js)
 ├── bundle.js         # JS·CSS·이미지를 release/index.html 하나로 조립
-├── test.mjs          # Node.js 유닛 테스트 (190개)
+├── tests/            # Node.js 유닛 테스트 (190개, node --test)
+│   ├── helpers.mjs         # 공용 도우미 (suite/test/assert, 가짜 입력 환경)
+│   ├── deck.test.mjs       # 카드, 덱
+│   ├── game.test.mjs       # 게임 규칙 (이동, 되돌리기, 승리, 자동 이동)
+│   ├── game-number.test.mjs  # 게임 번호 배치, 같은 판 다시 하기, 포기
+│   ├── game-save.test.mjs  # 저장 / 복원
+│   ├── input.test.mjs      # 키보드 / 터치 입력
+│   ├── lfsr.test.mjs       # 게임 번호 순환
+│   ├── solver.test.mjs     # 솔버
+│   ├── difficulty.test.mjs # 난이도 표
+│   ├── storage.test.mjs    # IndexedDB 저장소
+│   └── build.test.mjs      # 릴리스 빌드 조립
 ├── tsconfig.json
 ├── history.md        # 개발 이력
 └── Todo.md           # 요구사항 정의
@@ -133,4 +151,4 @@ webgame/
 - **저장**: IndexedDB
 - **사운드**: Web Audio API
 - **빌드**: tsc (개발) / tsc + esbuild (릴리스 단일 파일, 빌드 시에만 사용)
-- **테스트**: Node.js ES module (`node test.mjs`)
+- **테스트**: Node.js 내장 테스트 러너 (`node --test`, 외부 라이브러리 없음)
