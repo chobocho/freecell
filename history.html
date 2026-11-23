@@ -31,5 +31,19 @@
      빌드 설정은 compileSdk 37 / compileSdkMinor 1 / targetSdk 37 (SDK 37.1), AGP 8.10.1, Gradle 8.13 그대로 유지했습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임 입력 개선: 한글 IME 단축키 · 멀티터치 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/src/input.ts</code>: 단축키를 <code>e.key</code>에서 <code>e.code</code>(물리 키 위치) 기반으로 변경했습니다.
+        한글 입력 상태에서도 Q/W/E/R, U/I/O/P, 1~8, Z, N이 동작하며, 숫자 키패드(1~8, Enter)도 지원합니다.</li>
+    <li><code>src/webgame/src/input.ts</code>: 드래그를 시작한 손가락의 <code>identifier</code>만 추적하도록 하여,
+        드래그 중 두 번째 손가락이 드래그를 가로채거나 카드를 엉뚱한 곳에 놓는 문제를 막았습니다.</li>
+    <li><code>src/webgame/test.mjs</code>: 입력 처리 테스트 19개 추가 (키보드 11, 터치 8).</li>
+  </ul>
+  <p>검증: <code>tsc</code> 통과, <code>node test.mjs</code> 119/119 통과, <code>build.sh</code> 릴리스 빌드 성공.
+     실제 기기(한글 IME, 터치스크린)에서의 동작은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>

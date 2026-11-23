@@ -4,16 +4,42 @@ import { DeckIndex, TableauDeck } from './deck.js';
 //   Foundation(좌상단): Q W E R
 //   FreeCell(우상단):   U I O P
 //   Tableau(하단):      1 2 3 4 5 6 7 8
-const DECK_KEYS = {
-    'q': DeckIndex.Found1, 'w': DeckIndex.Found2,
-    'e': DeckIndex.Found3, 'r': DeckIndex.Found4,
-    'u': DeckIndex.Free1, 'i': DeckIndex.Free2,
-    'o': DeckIndex.Free3, 'p': DeckIndex.Free4,
-    '1': DeckIndex.Tableau1, '2': DeckIndex.Tableau2,
-    '3': DeckIndex.Tableau3, '4': DeckIndex.Tableau4,
-    '5': DeckIndex.Tableau5, '6': DeckIndex.Tableau6,
-    '7': DeckIndex.Tableau7, '8': DeckIndex.Tableau8,
+//
+// e.code(물리 키 위치) 기반 — 한/영 IME 상태와 무관하게 인식한다.
+// (한글 입력 상태에서는 e.key 가 'ㅂ' 또는 'Process' 로 들어와 e.key 매핑은 동작하지 않는다.)
+const DECK_CODES = {
+    'KeyQ': DeckIndex.Found1, 'KeyW': DeckIndex.Found2,
+    'KeyE': DeckIndex.Found3, 'KeyR': DeckIndex.Found4,
+    'KeyU': DeckIndex.Free1, 'KeyI': DeckIndex.Free2,
+    'KeyO': DeckIndex.Free3, 'KeyP': DeckIndex.Free4,
+    'Digit1': DeckIndex.Tableau1, 'Digit2': DeckIndex.Tableau2,
+    'Digit3': DeckIndex.Tableau3, 'Digit4': DeckIndex.Tableau4,
+    'Digit5': DeckIndex.Tableau5, 'Digit6': DeckIndex.Tableau6,
+    'Digit7': DeckIndex.Tableau7, 'Digit8': DeckIndex.Tableau8,
+    'Numpad1': DeckIndex.Tableau1, 'Numpad2': DeckIndex.Tableau2,
+    'Numpad3': DeckIndex.Tableau3, 'Numpad4': DeckIndex.Tableau4,
+    'Numpad5': DeckIndex.Tableau5, 'Numpad6': DeckIndex.Tableau6,
+    'Numpad7': DeckIndex.Tableau7, 'Numpad8': DeckIndex.Tableau8,
 };
+/**
+ * 키 이벤트를 물리 키 코드로 정규화한다.
+ * e.code 가 비어 있는 환경(일부 가상 키보드)에서는 e.key 로부터 같은 형식의 코드를 만든다.
+ */
+function keyCodeOf(e) {
+    if (e.code)
+        return e.code;
+    const k = e.key;
+    if (k.length === 1) {
+        if (k === ' ')
+            return 'Space';
+        if (k >= '0' && k <= '9')
+            return 'Digit' + k;
+        const upper = k.toUpperCase();
+        if (upper >= 'A' && upper <= 'Z')
+            return 'Key' + upper;
+    }
+    return k; // 'Enter', 'Escape', 'F1' 등은 key 와 code 가 같다
+}
 // ─── InputHandler ──────────────────────────────────────────────────────────
 export class InputHandler {
     constructor(canvas, game, renderer, cb) {
@@ -32,6 +58,8 @@ export class InputHandler {
         this.lastTapDeck = null;
         /** 드래그 시작 시 캐시한 캔버스 rect — 드래그 중 주소창 크기 변화로 rect가 바뀌어도 일관된 좌표 유지 */
         this._canvasRect = null;
+        /** 현재 추적 중인 터치(손가락)의 identifier — 두 번째 손가락이 드래그를 가로채지 못하게 함 */
+        this._activeTouchId = null;
         this._kbState = { selectedDeck: null, ctrlHeld: false };
         this._bindMouse();
         this._bindTouch();
@@ -74,6 +102,9 @@ export class InputHandler {
     _bindTouch() {
         this.canvas.addEventListener('touchstart', e => {
             e.preventDefault();
+            // 이미 한 손가락으로 드래그 중이면 다른 손가락은 무시 (드래그 가로채기·오탐 더블탭 방지)
+            if (this.drag.isDragging && this._activeTouchId !== null)
+                return;
             const t = e.changedTouches[0];
             // 이벤트 시작 시 rect 캐시 — touchmove/touchend도 동일 rect 사용
             this._canvasRect = this.canvas.getBoundingClientRect();
@@ -88,25 +119,45 @@ export class InputHandler {
             }
             this.lastTapTime = now;
             this.lastTapDeck = deckIdx;
+            this._activeTouchId = t.identifier;
             this._onPress(t.clientX, t.clientY);
         }, { passive: false });
         this.canvas.addEventListener('touchmove', e => {
             e.preventDefault();
-            const t = e.changedTouches[0];
+            const t = this._findActiveTouch(e.changedTouches);
+            if (!t)
+                return;
             this._onMove(t.clientX, t.clientY);
         }, { passive: false });
         this.canvas.addEventListener('touchend', e => {
             e.preventDefault();
-            const t = e.changedTouches[0];
+            const t = this._findActiveTouch(e.changedTouches);
+            if (!t)
+                return; // 추적 중이 아닌 손가락이 떨어진 경우
             this._onRelease(t.clientX, t.clientY);
+            this._activeTouchId = null;
             // 터치 종료 후 캐시한 rect 해제 — 이후 마우스 이벤트가 낡은 rect를 쓰지 않도록
             this._canvasRect = null;
         }, { passive: false });
-        this.canvas.addEventListener('touchcancel', () => {
+        this.canvas.addEventListener('touchcancel', e => {
+            // 추적 중이 아닌 손가락의 취소는 진행 중인 드래그에 영향을 주지 않는다
+            if (!this._findActiveTouch(e.changedTouches))
+                return;
             if (this.drag.isDragging)
                 this._cancelDrag();
+            this._activeTouchId = null;
             this._canvasRect = null;
         });
+    }
+    /** 추적 중인 손가락(identifier)에 해당하는 Touch 를 찾는다. 추적 중인 손가락이 없으면 첫 터치 */
+    _findActiveTouch(list) {
+        if (this._activeTouchId === null)
+            return list[0] ?? null;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].identifier === this._activeTouchId)
+                return list[i];
+        }
+        return null;
     }
     // ── 키보드 ──────────────────────────────────────────────────────────────
     _bindKeyboard() {
@@ -120,8 +171,9 @@ export class InputHandler {
                 return;
             }
             // 도움말이 열려 있으면 Esc/F1로 닫기만 허용, 그 외 게임 키는 차단
+            const code = keyCodeOf(e);
             if (this.cb.isHelpOpen()) {
-                if (e.key === 'Escape' || e.key === 'F1') {
+                if (code === 'Escape' || code === 'F1') {
                     e.preventDefault();
                     this.cb.onHelp();
                 }
@@ -131,28 +183,24 @@ export class InputHandler {
             if (this.cb.isModalBlocking())
                 return;
             // 덱 선택 키 (Ctrl/Meta/Alt 없을 때만)
-            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                const key = e.key.toLowerCase();
-                if (key in DECK_KEYS) {
-                    e.preventDefault();
-                    this._handleDeckKey(DECK_KEYS[key]);
-                    return;
-                }
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && code in DECK_CODES) {
+                e.preventDefault();
+                this._handleDeckKey(DECK_CODES[code]);
+                return;
             }
-            switch (e.key) {
-                case 'z':
-                case 'Z':
+            switch (code) {
+                case 'KeyZ':
                     e.preventDefault();
                     this.cb.onUndo();
                     break;
-                case 'n':
-                case 'N':
+                case 'KeyN':
                     if (!e.ctrlKey) {
                         e.preventDefault();
                         this.cb.onNewGame();
                     }
                     break;
                 case 'Enter':
+                case 'NumpadEnter':
                     // Foundation 자동이동: 키보드 선택 덱 우선, 없으면 마우스 드래그 중인 덱
                     if (this.game.state === 'play') {
                         if (this._kbState.selectedDeck !== null) {
@@ -168,7 +216,7 @@ export class InputHandler {
                         }
                     }
                     break;
-                case ' ':
+                case 'Space':
                     e.preventDefault();
                     this.cb.onPause();
                     break;

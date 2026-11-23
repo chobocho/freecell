@@ -271,3 +271,27 @@ node test.mjs  # 유닛 테스트 실행
 - **autoMoveToFoundation**: 에이스 자동이동 성공, King 이동 불가, Foundation에서 호출, `isAutoMovable` true/false (5개)
 - **게임 번호 & restart**: `gameNumber` 1/32000/0(랜덤), 같은 번호 → 동일 배치, 다른 번호 → 다른 배치, `restart()` 초기 배치 복원·`gameNumber` 유지·`deal()` 전 false 반환 (8개)
 - **합계: 87개 전체 통과**
+
+## 2026-11-23
+
+### 한글 IME 상태에서 단축키 미동작 수정 (solitaire_web 참고)
+
+**src/input.ts** (수정)
+- 키 매핑을 `e.key` → `e.code`(물리 키 위치) 기반으로 변경: `DECK_KEYS` → `DECK_CODES` (KeyQ/W/E/R, KeyU/I/O/P, Digit1~8)
+- 한글 입력 상태에서는 `e.key`가 `ㅂ`·`Process`로 들어와 Q/W/E/R, U/I/O/P, Z, N이 동작하지 않던 문제 해결
+- 숫자 키패드(Numpad1~8)로 Tableau 선택, NumpadEnter로 자동 이동 지원
+- `keyCodeOf()` 추가: `e.code`가 비어 있는 환경(일부 가상 키보드)은 `e.key`로 대체 인식
+
+**index.html / README.md** (수정): 숫자 키패드·한글 입력 상태 동작 안내 추가
+
+### 멀티터치 드래그 가로채기 방지 (solitaire_web 참고)
+
+**src/input.ts** (수정)
+- `_activeTouchId` 추가: 드래그를 시작한 손가락의 `identifier`만 추적 (`_findActiveTouch`)
+- 드래그 중 두 번째 손가락의 touchstart/touchmove/touchend/touchcancel 무시
+  - 기존: `changedTouches[0]`만 사용해 두 번째 손가락이 드래그를 바꾸거나, 떼는 위치에 카드가 놓이거나, 더블탭 자동이동이 오발동
+
+**test.mjs** (수정)
+- 가짜 window/canvas로 실제 `InputHandler` + `Renderer`를 구동하는 입력 테스트 추가
+- 키보드 11개 + 터치 8개 추가 → **합계 119개 전체 통과** (`tsc && node test.mjs`)
+- 미확인: 실제 기기(한글 IME 키보드, 터치스크린)에서의 동작
