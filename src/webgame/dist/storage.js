@@ -12,6 +12,7 @@ const SAVE_KEY = 'autosave';
 /** 랜덤 새 게임용 LFSR 상태 (같은 저장소, 키만 다름 → DB 버전/마이그레이션 불필요) */
 const LFSR_KEY = 'lfsr';
 const SCHEMA_VER = 1;
+const lfsrKey = (level) => (level ? `${LFSR_KEY}:${level}` : LFSR_KEY);
 // ─── GameStorage ───────────────────────────────────────────────────────────
 export class GameStorage {
     constructor() {
@@ -80,24 +81,27 @@ export class GameStorage {
             req.onerror = () => resolve();
         });
     }
-    /** 랜덤 새 게임용 LFSR 상태 저장 (새 게임을 시작해도 지워지지 않음) */
-    async saveLfsrState(state) {
+    /**
+     * 새 게임용 LFSR 상태 저장 (새 게임을 시작해도 지워지지 않음)
+     * @param level 난이도 이름. 생략하면 난이도 없는 랜덤용 (키 "lfsr"), 주면 "lfsr:난이도"
+     */
+    async saveLfsrState(state, level) {
         if (!this.db)
             return;
         return new Promise((resolve) => {
             const tx = this.db.transaction(STORE_NAME, 'readwrite');
-            const req = tx.objectStore(STORE_NAME).put(state, LFSR_KEY);
+            const req = tx.objectStore(STORE_NAME).put(state, lfsrKey(level));
             req.onsuccess = () => resolve();
             req.onerror = () => resolve();
         });
     }
     /** 저장된 LFSR 상태 불러오기 (없거나 손상되었으면 null) */
-    async loadLfsrState() {
+    async loadLfsrState(level) {
         if (!this.db)
             return null;
         return new Promise((resolve) => {
             const tx = this.db.transaction(STORE_NAME, 'readonly');
-            const req = tx.objectStore(STORE_NAME).get(LFSR_KEY);
+            const req = tx.objectStore(STORE_NAME).get(lfsrKey(level));
             req.onsuccess = () => {
                 const v = req.result;
                 resolve(isValidLfsrState(v) ? v : null);

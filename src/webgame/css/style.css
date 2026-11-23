@@ -287,6 +287,31 @@ html, body {
 }
 .game-number-error.hidden { display: none; }
 
+/* 난이도 선택 (번호를 비워둔 새 게임에 적용) */
+.level-select {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.level-btn {
+  min-width: 44px;
+  padding: 7px 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #c8e6c9;
+  background: #0d2b0d;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.level-btn:hover { border-color: rgba(255,255,255,0.5); }
+.level-btn:focus-visible { outline: 2px solid #ffd54f; outline-offset: 2px; }
+.level-btn.selected {
+  color: #1b1b1b;
+  background: #ffd54f;
+  border-color: #ffd54f;
+}
+
 /* ─── 이어하기 버튼 ──────────────────────────────────────── */
 .btn-continue {
   background: #1565c0;

@@ -9,6 +9,7 @@ Android FreeCell 게임을 HTML5 Canvas + TypeScript로 포팅한 웹 버전입�
 ## 특징
 
 - **MS FreeCell 호환 RNG** — 게임 번호 1~32000으로 MS FreeCell과 동일한 배치 재현
+- **난이도 선택 (하/중/상)** — 게임 번호 1~32000을 솔버로 미리 풀어 헤맨 정도로 3등분. 새 게임 창에서 난이도를 고르고 번호를 비워두면 그 난이도의 판이 나옴
 - **중복 없는 랜덤 게임** — 번호를 비워두면 15비트 LFSR 순서로 번호를 골라, 한 바퀴(1~32000) 동안 같은 판이 다시 나오지 않음 (풀 수 없는 #11982 제외)
 - **반응형 레이아웃** — Galaxy Z Fold 7 접힘(≈360px)부터 데스크톱까지 대응
 - **멀티 입력** — 마우스 드래그앤드롭 / 터치 드래그앤드롭 / 키보드 전용 플레이
@@ -88,15 +89,20 @@ webgame/
 │   ├── freecell.ts   # 게임 로직 (상태 머신, 이동 규칙)
 │   ├── input.ts      # 마우스/터치/키보드 입력 처리
 │   ├── lfsr.ts       # 랜덤 새 게임용 LFSR 게임 번호 순환
+│   ├── difficulty.ts # 난이도(하/중/상) 조회, 난이도별 게임 번호 선택
+│   ├── levels.ts     # 게임 번호별 난이도 표 (자동 생성)
+│   ├── solver.ts     # FreeCell 솔버 (난이도 표 생성용, 릴리스에 미포함)
 │   ├── renderer.ts   # Canvas 2D 렌더링
 │   ├── sound.ts      # Web Audio API 사운드 합성
 │   ├── storage.ts    # IndexedDB 자동저장
 │   └── main.ts       # GameController (통합)
+├── scripts/
+│   └── gen-levels.mjs  # 난이도 표 생성 (tsc && node scripts/gen-levels.mjs)
 ├── dist/             # 컴파일된 JS (tsc 출력)
 ├── css/style.css
 ├── img/              # 카드 이미지 (52장 + 뒷면)
 ├── index.html
-├── test.mjs          # Node.js 유닛 테스트 (134개)
+├── test.mjs          # Node.js 유닛 테스트 (157개)
 ├── tsconfig.json
 ├── history.md        # 개발 이력
 └── Todo.md           # 요구사항 정의

@@ -61,5 +61,23 @@
      실제 브라우저에서의 동작은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 난이도 선택 (하/중/상) — 솔버로 32000판 분류 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/src/solver.ts</code>(신규): FreeCell 솔버를 새로 작성했습니다. 풀이 수순은 실제 게임에 그대로 재생해 검증합니다.
+        릴리스 번들에는 포함되지 않습니다.</li>
+    <li><code>src/webgame/scripts/gen-levels.mjs</code>(신규): 게임 #1~#32000을 병렬로 풀어 난이도 표
+        <code>src/levels.ts</code>를 생성합니다(약 22분). 30189판 풀이 확인, 탐색 상태 수로 3등분:
+        하 10740판 / 중 10597판 / 상 10663판(상한 안에 못 푼 1811판 포함).</li>
+    <li><code>src/webgame/src/difficulty.ts</code>(신규): 번호별 난이도 조회, 난이도별로 중복 없이 번호를 고르는 함수.</li>
+    <li>새 게임 창에 "랜덤 / 하 / 중 / 상" 버튼을 추가하고, 헤더에 <code>#번호 난이도</code>를 표시합니다.
+        선택은 localStorage에, 난이도별 순환 상태는 IndexedDB에 저장합니다.</li>
+    <li><code>src/webgame/test.mjs</code>: 테스트 23개 추가 (솔버 12, 난이도 10, 저장소 1).</li>
+  </ul>
+  <p>검증: <code>tsc</code> 통과, <code>node test.mjs</code> 157/157 통과, <code>build.sh</code> 릴리스 빌드 성공.
+     실제 브라우저에서의 화면 동작은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>

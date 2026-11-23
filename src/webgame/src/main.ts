@@ -5,6 +5,16 @@ import { SoundManager } from './sound.js';
 import { GameStorage, formatSavedAt } from './storage.js';
 import { DeckIndex } from './deck.js';
 import { nextGameNumber, randomLfsrState } from './lfsr.js';
+import {
+  Difficulty, DIFFICULTIES, DIFFICULTY_LABEL,
+  isDifficulty, difficultyOf, nextGameNumberOfDifficulty,
+} from './difficulty.js';
+
+/** 새 게임 번호를 고르는 방식: 난이도 무관(random) 또는 하/중/상 */
+type LevelChoice = Difficulty | 'random';
+
+const LEVEL_CHOICES: readonly LevelChoice[] = ['random', ...DIFFICULTIES];
+const LEVEL_PREF_KEY = 'freecell-difficulty';
 
 // ─── 게임 컨트롤러 ────────────────────────────────────────────────────────
 
@@ -12,8 +22,11 @@ class GameController {
   /** MS FreeCell 1~32000 중 유일하게 풀 수 없는 게임 번호 */
   private static readonly UNSOLVABLE_GAMES: number[] = [11982];
 
-  /** 랜덤 새 게임용 LFSR 상태 (null = 저장값 없음 → 첫 사용 시 랜덤 위치에서 시작) */
-  private _lfsrState: number | null = null;
+  /** 번호를 비워둔 새 게임이 어느 난이도에서 번호를 고를지 (localStorage 에 기억) */
+  private _levelChoice: LevelChoice = 'random';
+
+  /** 선택 방식별 LFSR 상태 (없음 = 저장값 없음 → 첫 사용 시 랜덤 위치에서 시작) */
+  private _lfsrStates: Partial<Record<LevelChoice, number>> = {};
 
   /** 자동 완료 진행 중 여부 (입력/재진입 차단용) */
   private _autoCompleting = false;
@@ -92,7 +105,11 @@ class GameController {
   async start(): Promise<void> {
     await this.renderer.init();
     await this.storage.init();
-    this._lfsrState = await this.storage.loadLfsrState();
+    for (const choice of LEVEL_CHOICES) {
+      const state = await this.storage.loadLfsrState(choice === 'random' ? undefined : choice);
+      if (state !== null) this._lfsrStates[choice] = state;
+    }
+    this._levelChoice = this._loadLevelChoice();
     this._bindButtons();
     this._bindResize();
     this._bindPageHide();
@@ -167,6 +184,15 @@ class GameController {
     document.getElementById('game-number-cancel-btn')!.addEventListener('click', () => {
       this._onGameNumberCancel();
     });
+    // 난이도 선택 (번호를 비워둔 새 게임에 적용)
+    for (const btn of this._levelButtons()) {
+      btn.addEventListener('click', () => {
+        const choice = btn.dataset.level;
+        if (choice === 'random' || isDifficulty(choice)) this._setLevelChoice(choice);
+        this.elGameNumberInput.focus();
+      });
+    }
+    this._syncLevelButtons();
     this.elGameNumberInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this._onGameNumberStart();
       if (e.key === 'Escape') this._onGameNumberCancel();
@@ -338,7 +364,7 @@ class GameController {
   private _onGameNumberStart(): void {
     const raw = this.elGameNumberInput.value.trim();
 
-    // 비워두면 랜덤 번호 — LFSR 순서로 골라 한 바퀴(1~32000) 동안 같은 판이 다시 나오지 않는다
+    // 비워두면 선택한 난이도에서 번호를 고른다 — LFSR 순서라 한 바퀴 동안 같은 판이 다시 나오지 않는다
     if (raw === '') {
       this._clearGameNumberError();
       this.gameNumberOverlay.classList.add('hidden');
@@ -363,15 +389,54 @@ class GameController {
     this._newGame(parsed);
   }
 
-  /** LFSR을 전진시켜 다음 랜덤 게임 번호를 고르고 새 상태를 저장한다 (풀 수 없는 판은 제외) */
+  /**
+   * LFSR을 전진시켜 다음 게임 번호를 고르고 새 상태를 저장한다 (풀 수 없는 판은 제외).
+   * 난이도를 골랐으면 그 난이도의 번호만, 랜덤이면 1~32000 전체에서 고른다.
+   * 상태는 선택 방식마다 따로 관리하므로 난이도를 바꿔도 각자의 순서가 이어진다.
+   */
   private _nextRandomGameNumber(): number {
-    const r = nextGameNumber(
-      this._lfsrState ?? randomLfsrState(),
-      GameController.UNSOLVABLE_GAMES,
-    );
-    this._lfsrState = r.state;
-    this.storage.saveLfsrState(r.state);
+    const choice = this._levelChoice;
+    const state  = this._lfsrStates[choice] ?? randomLfsrState();
+    const r = choice === 'random'
+      ? nextGameNumber(state, GameController.UNSOLVABLE_GAMES)
+      : nextGameNumberOfDifficulty(choice, state, GameController.UNSOLVABLE_GAMES);
+    this._lfsrStates[choice] = r.state;
+    this.storage.saveLfsrState(r.state, choice === 'random' ? undefined : choice);
     return r.gameNumber;
+  }
+
+  // ── 난이도 선택 ─────────────────────────────────────────────────────────
+
+  private _levelButtons(): HTMLButtonElement[] {
+    return Array.from(document.querySelectorAll<HTMLButtonElement>('#level-select [data-level]'));
+  }
+
+  private _syncLevelButtons(): void {
+    for (const btn of this._levelButtons()) {
+      const on = btn.dataset.level === this._levelChoice;
+      btn.classList.toggle('selected', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    }
+  }
+
+  private _setLevelChoice(choice: LevelChoice): void {
+    this._levelChoice = choice;
+    this._syncLevelButtons();
+    try {
+      localStorage.setItem(LEVEL_PREF_KEY, choice);
+    } catch {
+      // 저장소를 쓸 수 없어도(사생활 보호 모드 등) 이번 실행 동안은 선택이 유지된다
+    }
+  }
+
+  private _loadLevelChoice(): LevelChoice {
+    try {
+      const v = localStorage.getItem(LEVEL_PREF_KEY);
+      if (v === 'random' || isDifficulty(v)) return v;
+    } catch {
+      // 읽을 수 없으면 기본값
+    }
+    return 'random';
   }
 
   private _showGameNumberError(msg: string): void {
@@ -480,7 +545,8 @@ class GameController {
     const el = document.getElementById('game-number-display');
     if (!el) return;
     const n = this.game.gameNumber;
-    el.textContent = n > 0 ? `#${n}` : '';
+    const level = difficultyOf(n);
+    el.textContent = n > 0 ? `#${n}${level ? ' ' + DIFFICULTY_LABEL[level] : ''}` : '';
   }
 
   private _undo(): void {

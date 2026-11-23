@@ -78,7 +78,13 @@
                    class="game-number-input"
                    min="1" max="32000"
                    placeholder="랜덤" />
-            <p class="game-number-hint">1 – 32000 · 비워두면 랜덤 번호</p>
+            <p class="game-number-hint">1 – 32000 · 비워두면 아래 난이도에서 번호를 고릅니다</p>
+            <div class="level-select" id="level-select" role="radiogroup" aria-label="난이도">
+              <button type="button" class="level-btn" role="radio" data-level="random">랜덤</button>
+              <button type="button" class="level-btn" role="radio" data-level="easy">하</button>
+              <button type="button" class="level-btn" role="radio" data-level="medium">중</button>
+              <button type="button" class="level-btn" role="radio" data-level="hard">상</button>
+            </div>
             <p class="game-number-error hidden" id="game-number-error"></p>
           </div>
           <div class="confirm-btns">

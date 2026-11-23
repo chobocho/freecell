@@ -31,7 +31,7 @@ const css = read('css/style.css');
 // emitted by tsc; because they share one <script type="module"> scope we can
 // simply drop the local import lines and the `export` keyword.
 const MODULE_ORDER = [
-  'card', 'deck', 'lfsr', 'sound', 'storage',
+  'card', 'deck', 'lfsr', 'levels', 'difficulty', 'sound', 'storage',
   'freecell', 'input', 'renderer', 'main',
 ];
 
