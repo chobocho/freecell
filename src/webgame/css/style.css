@@ -123,6 +123,14 @@ html, body {
   opacity: 0.6;
 }
 
+.btn-auto {
+  background: #00838f;
+  color: #fff;
+}
+.btn-auto:hover { background: #006064; }
+.btn-auto:disabled { opacity: 0.4; cursor: default; }
+.btn-auto:disabled:hover { background: #00838f; }
+
 .btn-pause {
   background: #f57c00;
   color: #fff;

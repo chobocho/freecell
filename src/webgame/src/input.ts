@@ -11,6 +11,8 @@ export interface InputCallbacks {
   onHelp():      void;
   onMoveCard(from: DeckIndex, to: DeckIndex, count: number): boolean;
   onAutoMove(from: DeckIndex): void;
+  /** 올릴 수 있는 카드를 모두 Foundation으로 (A 키) */
+  onAutoComplete(): void;
   /** 도움말 오버레이가 열려 있는지 (Esc/F1로만 닫도록 게임 키 차단) */
   isHelpOpen(): boolean;
   /** 확인/게임번호 등 모달이 열려 게임 단축키를 차단해야 하는지 */
@@ -231,6 +233,15 @@ export class InputHandler {
           break;
         case 'KeyN':
           if (!e.ctrlKey) { e.preventDefault(); this.cb.onNewGame(); }
+          break;
+        case 'KeyA':
+          // Ctrl/Cmd+A(전체 선택) 등 브라우저 단축키는 건드리지 않음
+          if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            this._kbState.selectedDeck = null;
+            if (this.drag.isDragging) this._cancelDrag();
+            this.cb.onAutoComplete();
+          }
           break;
         case 'Enter':
         case 'NumpadEnter':

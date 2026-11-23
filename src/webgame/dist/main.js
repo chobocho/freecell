@@ -3,7 +3,6 @@ import { Renderer } from './renderer.js';
 import { InputHandler } from './input.js';
 import { SoundManager } from './sound.js';
 import { GameStorage, formatSavedAt } from './storage.js';
-import { DeckIndex } from './deck.js';
 import { nextGameNumber, randomLfsrState } from './lfsr.js';
 import { DIFFICULTIES, DIFFICULTY_LABEL, isDifficulty, difficultyOf, nextGameNumberOfDifficulty, } from './difficulty.js';
 const LEVEL_CHOICES = ['random', ...DIFFICULTIES];
@@ -43,6 +42,7 @@ class GameController {
         this.input = new InputHandler(this.canvas, this.game, this.renderer, {
             onNewGame: () => this._requestNewGame(),
             onUndo: () => this._undo(),
+            onAutoComplete: () => this._requestAutoComplete(),
             onPause: () => this._togglePause(),
             onHelp: () => this._toggleHelp(),
             onMoveCard: (from, to, count) => this._handleMove(from, to, count),
@@ -89,6 +89,7 @@ class GameController {
         this.elConfirmYesBtn = document.getElementById('confirm-yes-btn');
         this.failOverlay = document.getElementById('fail-overlay');
         this.elGiveUpBtn = document.getElementById('btn-give-up');
+        this.elAutoBtn = document.getElementById('btn-auto-complete');
         this.gameNumberOverlay = document.getElementById('game-number-overlay');
         this.elGameNumberInput = document.getElementById('game-number-input');
     }
@@ -124,6 +125,7 @@ class GameController {
         });
         // 포기
         this.elGiveUpBtn.addEventListener('click', () => this._requestGiveUp());
+        this.elAutoBtn.addEventListener('click', () => this._requestAutoComplete());
         // 포기 후: 같은 판 다시 하기 / 새 게임
         document.getElementById('overlay-fail-retry-btn').addEventListener('click', () => {
             this._restartSameDeal();
@@ -180,6 +182,7 @@ class GameController {
             else {
                 // 원래 플레이 중이었으면 → 게임 재개
                 this.game.resume();
+                this._updateUI();
                 this._startTimer();
                 this.elPauseBtn.textContent = '⏸ 일시정지';
             }
@@ -252,6 +255,7 @@ class GameController {
         else {
             // 저장 당시 pause 상태였으면 재개
             this.game.resume();
+            this._updateUI();
             this._startTimer();
         }
     }
@@ -298,6 +302,7 @@ class GameController {
         }
         if (this.game.state === 'play') {
             this.game.pause();
+            this._updateUI();
             this._stopTimer();
             this.elPauseBtn.textContent = '▶ 계속';
         }
@@ -434,6 +439,7 @@ class GameController {
         else {
             // play 상태였던 경우 (confirm → game-number-dialog 경로)
             this.game.resume();
+            this._updateUI();
             this._startTimer();
             this.elPauseBtn.textContent = '⏸ 일시정지';
         }
@@ -512,6 +518,7 @@ class GameController {
             return;
         this.sound.init();
         this._stopTimer();
+        this._stopAutoComplete();
         this._cancelFailOverlayTimer();
         this._cancelRestartPoll();
         this.renderer.stopEffects();
@@ -531,11 +538,13 @@ class GameController {
         // 초기 배열을 모를 때는 이펙트/리셋 없이 게임 재개 (저장 데이터 보호)
         if (!this.game.canRestart) {
             this.game.resume();
+            this._updateUI();
             this._startTimer();
             this.elPauseBtn.textContent = '⏸ 일시정지';
             return;
         }
         this._stopTimer();
+        this._stopAutoComplete();
         this._cancelWinOverlayTimer();
         this.elPauseBtn.textContent = '⏸ 일시정지';
         this._hideAllOverlays();
@@ -565,6 +574,8 @@ class GameController {
         // 키보드(N)로 시작하는 경로에서도 사운드가 초기화되도록 보장 (버튼 클릭 없이 진입 가능)
         this.sound.init();
         this._stopTimer();
+        // 자동 올리기 도중 새 게임을 시작하면 새 판의 카드를 계속 올리게 되므로 먼저 중단
+        this._stopAutoComplete();
         this._cancelWinOverlayTimer();
         this._cancelFailOverlayTimer();
         this._cancelRestartPoll();
@@ -606,6 +617,7 @@ class GameController {
             return;
         if (this.game.state === 'play') {
             this.game.pause();
+            this._updateUI();
             this._stopTimer();
             this.pauseOverlay.classList.remove('hidden');
             this.elPauseBtn.textContent = '▶ 계속';
@@ -615,6 +627,7 @@ class GameController {
         }
         else if (this.game.state === 'pause') {
             this.game.resume();
+            this._updateUI();
             this._startTimer();
             this.pauseOverlay.classList.add('hidden');
             this.elPauseBtn.textContent = '⏸ 일시정지';
@@ -664,23 +677,35 @@ class GameController {
             return;
         this._startAutoComplete();
     }
-    /** 한 장씩 애니메이션처럼 Foundation으로 이동시키며 게임 종료까지 진행 */
-    _startAutoComplete() {
+    /**
+     * 수동 자동 올리기 (버튼 / A 키): 지금 올릴 수 있는 카드를 연쇄까지 모두 Foundation으로 올린다.
+     * 판을 끝낼 수 없는 상태여도 동작하며, 더 올릴 카드가 없으면 멈춘다.
+     */
+    _requestAutoComplete() {
+        if (this._autoCompleting)
+            return;
+        if (this.game.state !== 'play')
+            return;
+        if (this.renderer.isFailAnimating)
+            return; // 다시 하기 이펙트 중
+        if (!this.game.hasFoundationMove()) {
+            this.sound.play('invalid');
+            return;
+        }
+        this._startAutoComplete(true);
+    }
+    /**
+     * 한 장씩 애니메이션처럼 Foundation으로 이동시킨다. 더 올릴 카드가 없거나 승리하면 종료.
+     * @param immediate 첫 장을 지연 없이 바로 올릴지 (수동 요청 시 즉시 반응)
+     */
+    _startAutoComplete(immediate = false) {
         this._autoCompleting = true;
         const tick = () => {
-            if (this.game.state !== 'play') {
+            this._autoCompleteTimer = 0;
+            if (this.game.autoMoveOne() === null) {
+                // 더 올릴 카드 없음 (또는 일시정지 등으로 중단) — 여기까지의 진행을 저장
                 this._stopAutoComplete();
-                return;
-            }
-            let moved = false;
-            for (let i = DeckIndex.Free1; i <= DeckIndex.Tableau8; i++) {
-                if (this.game.autoMoveToFoundation(i) !== null) {
-                    moved = true;
-                    break;
-                }
-            }
-            if (!moved) {
-                this._stopAutoComplete();
+                this._scheduleSave();
                 return;
             }
             this.sound.play('card_place');
@@ -692,14 +717,20 @@ class GameController {
             }
             this._autoCompleteTimer = window.setTimeout(tick, 120);
         };
-        this._autoCompleteTimer = window.setTimeout(tick, 120);
+        if (immediate)
+            tick();
+        else
+            this._autoCompleteTimer = window.setTimeout(tick, 120);
     }
     _stopAutoComplete() {
+        const wasRunning = this._autoCompleting;
         this._autoCompleting = false;
         if (this._autoCompleteTimer) {
             clearTimeout(this._autoCompleteTimer);
             this._autoCompleteTimer = 0;
         }
+        if (wasRunning)
+            this._updateUI(); // 버튼 활성 상태 복구
     }
     _onWin() {
         this._stopTimer();
@@ -733,6 +764,7 @@ class GameController {
         this.elMoves.textContent = String(this.game.moveCount);
         this.elUndoBtn.disabled = !this.game.canUndo || this.game.state === 'win' || this.game.state === 'lost';
         this.elGiveUpBtn.disabled = this.game.state !== 'play' && this.game.state !== 'pause';
+        this.elAutoBtn.disabled = this._autoCompleting || !this.game.hasFoundationMove();
     }
     _hideAllOverlays() {
         this.startOverlay.classList.add('hidden');

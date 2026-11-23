@@ -64,6 +64,7 @@ python3 -m http.server 8080
 | `1`–`8` | Tableau 1–8 선택 (숫자 키패드 가능) |
 | `Enter` | 선택 카드 → Foundation 자동 이동 |
 | `Z` | 되돌리기 (Undo) |
+| `A` | 자동 올리기 (올릴 수 있는 카드를 모두 Foundation으로) |
 | `N` | 새 게임 |
 | `Space` / `Esc` | 일시정지 / 재개 |
 | `Ctrl` (누르는 중) | 키 배치 힌트 오버레이 표시 |
@@ -103,7 +104,7 @@ webgame/
 ├── css/style.css
 ├── img/              # 카드 이미지 (52장 + 뒷면)
 ├── index.html
-├── test.mjs          # Node.js 유닛 테스트 (171개)
+├── test.mjs          # Node.js 유닛 테스트 (180개)
 ├── tsconfig.json
 ├── history.md        # 개발 이력
 └── Todo.md           # 요구사항 정의

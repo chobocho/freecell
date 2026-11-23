@@ -246,6 +246,28 @@ export class FreecellGame {
     return null;
   }
 
+  /** 진행 중인 판에서 Foundation으로 올릴 수 있는 카드가 하나라도 있는지 */
+  hasFoundationMove(): boolean {
+    if (this._state !== 'play') return false;
+    for (let i = DeckIndex.Free1; i <= DeckIndex.Tableau8; i++) {
+      if (this.isAutoMovable(i as DeckIndex)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Foundation으로 올릴 수 있는 카드 한 장을 올린다 (FreeCell → Tableau 순으로 탐색).
+   * 반복 호출하면 연쇄로 올릴 수 있는 카드까지 모두 올라간다.
+   * @returns 카드를 올린 출발 덱, 올릴 카드가 없으면 null
+   */
+  autoMoveOne(): DeckIndex | null {
+    if (this._state !== 'play') return null;
+    for (let i = DeckIndex.Free1; i <= DeckIndex.Tableau8; i++) {
+      if (this.autoMoveToFoundation(i as DeckIndex) !== null) return i as DeckIndex;
+    }
+    return null;
+  }
+
   // ── 자동 완료 ───────────────────────────────────────────────────────────
 
   /**

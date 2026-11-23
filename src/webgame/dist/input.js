@@ -199,6 +199,16 @@ export class InputHandler {
                         this.cb.onNewGame();
                     }
                     break;
+                case 'KeyA':
+                    // Ctrl/Cmd+A(전체 선택) 등 브라우저 단축키는 건드리지 않음
+                    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                        e.preventDefault();
+                        this._kbState.selectedDeck = null;
+                        if (this.drag.isDragging)
+                            this._cancelDrag();
+                        this.cb.onAutoComplete();
+                    }
+                    break;
                 case 'Enter':
                 case 'NumpadEnter':
                     // Foundation 자동이동: 키보드 선택 덱 우선, 없으면 마우스 드래그 중인 덱

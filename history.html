@@ -95,5 +95,19 @@
      실제 브라우저에서의 화면 동작은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 수동 자동 올리기 버튼 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/src/freecell.ts</code>: <code>hasFoundationMove()</code>, <code>autoMoveOne()</code>을 추가했습니다.</li>
+    <li><code>src/webgame/src/main.ts</code>, <code>src/input.ts</code>: 헤더 "⤒ 자동 올리기" 버튼과 <code>A</code> 키.
+        지금 올릴 수 있는 카드를 연쇄까지 한 장씩 Foundation으로 올립니다. 판을 끝낼 수 없는 상태에서도 동작합니다.</li>
+    <li>자동 올리기 도중 새 게임/다시 하기를 하면 새 판의 카드를 계속 올리던 문제를 함께 고쳤습니다.</li>
+    <li><code>src/webgame/test.mjs</code>: 테스트 9개 추가.</li>
+  </ul>
+  <p>검증: <code>tsc</code> 통과, <code>node test.mjs</code> 180/180 통과, <code>build.sh</code> 릴리스 빌드 성공.
+     실제 브라우저에서의 화면 동작은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>
