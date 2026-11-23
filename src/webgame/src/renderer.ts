@@ -125,6 +125,21 @@ export interface DragState {
   offsetY: number;
 }
 
+/** 한 프레임에 이펙트를 진행시키는 최대 시간 (초) */
+const MAX_FRAME_DT = 1;
+/**
+ * 이펙트 물리 계산 한 단계의 최대 시간 (초).
+ * 프레임 간격이 이보다 길면 여러 단계로 나눠 계산한다 — 한 번에 크게 건너뛰면
+ * 바닥 바운스를 지나치거나 궤적이 달라지기 때문.
+ */
+const MAX_SIM_STEP = 1 / 30;
+
+/** dt 를 MAX_SIM_STEP 이하의 같은 크기 단계들로 나눈다 */
+function simSteps(dt: number): { count: number; step: number } {
+  const count = Math.max(1, Math.ceil(dt / MAX_SIM_STEP));
+  return { count, step: dt / count };
+}
+
 export class Renderer {
   private readonly ctx: CanvasRenderingContext2D;
   private images: ImageMap = new Map();
@@ -238,16 +253,16 @@ export class Renderer {
     }
 
     // 이펙트 — 승리/실패 각각 독립 실행
-    // 물리 계수가 60fps 기준으로 튜닝되어 있어 delta time으로 정규화 (120Hz 2배속/저사양 슬로모션 방지)
+    // 실제로 흐른 시간만큼 진행한다 (120Hz 2배속 / 느린 화면 갱신에서의 슬로모션 방지).
+    // 탭이 가려졌다 돌아온 경우처럼 간격이 아주 길면 한 번에 MAX_FRAME_DT 까지만 진행.
     const now = performance.now();
     const dt  = this._lastFrameTime > 0
-      ? Math.min((now - this._lastFrameTime) / 1000, 0.05)
+      ? Math.min((now - this._lastFrameTime) / 1000, MAX_FRAME_DT)
       : 1 / 60;
     this._lastFrameTime = now;
-    const f = dt * 60; // 60fps 기준 프레임 배율
 
-    if (this._winAnimActive)  this._stepWinAnim(dt, f);
-    if (this._failAnimating)  this._stepFailAnim(dt, f);
+    if (this._winAnimActive)  this._stepWinAnim(dt);
+    if (this._failAnimating)  this._stepFailAnim(dt);
   }
 
   // ── 배경 ─────────────────────────────────────────────────────────────────
@@ -680,23 +695,25 @@ export class Renderer {
     this._winAnimActive = true;
   }
 
-  private _stepWinAnim(dt: number, f: number): void {
-    const { ctx } = this;
+  /** 승리 이펙트를 dt 초만큼 진행하고 그린다 */
+  private _stepWinAnim(dt: number): void {
+    const { count, step } = simSteps(dt);
+    for (let i = 0; i < count; i++) this._updateWinAnim(step);
+    this._drawWinAnim();
+
+    const allDone = this._winAnimCards.every(c => c.done) && this._winSparks.length === 0;
+    if (allDone) this._winAnimActive = false;
+  }
+
+  /** 승리 이펙트 물리 계산 한 단계 (그리지 않음) */
+  private _updateWinAnim(dt: number): void {
+    const f = dt * 60; // 물리 계수는 60fps 기준으로 튜닝되어 있다
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
     const G = 0.45; // 중력
 
-    // 1) 아직 발사 전인 카드는 제자리에 표시 — 배열 역순 = 아래 카드부터 그려서 z순서 유지
-    for (let i = this._winAnimCards.length - 1; i >= 0; i--) {
-      const c = this._winAnimCards[i];
-      c.elapsed += dt;
-      if (c.elapsed < c.delay && !c.done) {
-        this._drawCard(c.card, c.x, c.y, true);
-      }
-    }
-
-    // 2) 발사된 카드: 물리 + 바닥 바운스 + 잔상 + 스파크
     for (const c of this._winAnimCards) {
+      c.elapsed += dt;
       if (c.done || c.elapsed < c.delay) continue;
 
       c.vy    += G * f;
@@ -726,7 +743,36 @@ export class Renderer {
       c.trail.push({ x: c.x, y: c.y, angle: c.angle });
       if (c.trail.length > 9) c.trail.shift();
 
-      // 잔상 → 본체 순으로 그림
+      // 비행 중 금빛 반짝이
+      if (Math.random() < 0.25 * f) {
+        this._emitSparks(c.x + Math.random() * c.w, c.y + Math.random() * c.h, 1, 0);
+      }
+    }
+
+    for (const s of this._winSparks) {
+      s.vy   += 0.12 * f;
+      s.x    += s.vx * f;
+      s.y    += s.vy * f;
+      s.life -= s.decay * f;
+    }
+    this._winSparks = this._winSparks.filter(s => s.life > 0);
+  }
+
+  private _drawWinAnim(): void {
+    const { ctx } = this;
+
+    // 1) 아직 발사 전인 카드는 제자리에 표시 — 배열 역순 = 아래 카드부터 그려서 z순서 유지
+    for (let i = this._winAnimCards.length - 1; i >= 0; i--) {
+      const c = this._winAnimCards[i];
+      if (c.elapsed < c.delay && !c.done) {
+        this._drawCard(c.card, c.x, c.y, true);
+      }
+    }
+
+    // 2) 발사된 카드: 잔상 → 본체 순으로 그림
+    for (const c of this._winAnimCards) {
+      if (c.done || c.elapsed < c.delay) continue;
+
       for (let i = 0; i < c.trail.length - 1; i += 2) {
         const t = c.trail[i];
         ctx.save();
@@ -742,17 +788,19 @@ export class Renderer {
       ctx.rotate(c.angle);
       this._drawCard(c.card, -c.w / 2, -c.h / 2, true);
       ctx.restore();
-
-      // 비행 중 금빛 반짝이
-      if (Math.random() < 0.25 * f) {
-        this._emitSparks(c.x + Math.random() * c.w, c.y + Math.random() * c.h, 1, 0);
-      }
     }
 
-    this._stepSparks(f);
-
-    const allDone = this._winAnimCards.every(c => c.done) && this._winSparks.length === 0;
-    if (allDone) this._winAnimActive = false;
+    // 3) 스파크
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter'; // 겹칠수록 밝아지는 글로우
+    for (const s of this._winSparks) {
+      ctx.globalAlpha = s.life;
+      ctx.fillStyle = `hsl(${s.hue}, 100%, ${55 + s.life * 30}%)`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   /** 금빛 스파크 파티클 방출 */
@@ -769,26 +817,6 @@ export class Renderer {
         hue: 40 + Math.random() * 20, // 금색 계열
       });
     }
-  }
-
-  private _stepSparks(f: number): void {
-    const { ctx } = this;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter'; // 겹칠수록 밝아지는 글로우
-    for (const s of this._winSparks) {
-      s.vy   += 0.12 * f;
-      s.x    += s.vx * f;
-      s.y    += s.vy * f;
-      s.life -= s.decay * f;
-      if (s.life <= 0) continue;
-      ctx.globalAlpha = s.life;
-      ctx.fillStyle = `hsl(${s.hue}, 100%, ${55 + s.life * 30}%)`;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-    this._winSparks = this._winSparks.filter(s => s.life > 0);
   }
 
   // ── 패배 이펙트 (바람에 흩날리기) ────────────────────────────────────────
@@ -828,20 +856,27 @@ export class Renderer {
     }
   }
 
-  private _stepFailAnim(dt: number, f: number): void {
-    const { ctx } = this;
+  /** 패배 이펙트를 dt 초만큼 진행하고 그린다 */
+  private _stepFailAnim(dt: number): void {
+    const { count, step } = simSteps(dt);
+    for (let i = 0; i < count; i++) this._updateFailAnim(step);
+    this._drawFailAnim();
+
+    const allDone = this._failAnimCards.every(c => c.alpha <= 0);
+    if (allDone) {
+      this._failAnimating = false;
+    }
+  }
+
+  /** 패배 이펙트 물리 계산 한 단계 (그리지 않음) */
+  private _updateFailAnim(dt: number): void {
+    const f = dt * 60; // 물리 계수는 60fps 기준으로 튜닝되어 있다
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
 
-    // 1) 아직 날아가지 않은 카드는 제자리에 표시 (시작하자마자 전부 사라졌다가 하나씩 나타나는 것 방지)
     for (const c of this._failAnimCards) {
       c.elapsed += dt;
-      if (c.elapsed < c.delay) this._drawCard(c.card, c.x, c.y);
-    }
-
-    // 2) 날아가는 카드: 대기 중인 카드 위에 그림
-    for (const c of this._failAnimCards) {
-      if (c.elapsed < c.delay) continue;
+      if (c.elapsed < c.delay || c.alpha <= 0) continue;
 
       c.vx    *= Math.pow(0.99, f);
       c.vy    += 0.15 * f; // 약한 중력
@@ -854,6 +889,20 @@ export class Renderer {
         c.alpha = 0; continue;
       }
       c.alpha = Math.max(0, c.alpha - 0.008 * f);
+    }
+  }
+
+  private _drawFailAnim(): void {
+    const { ctx } = this;
+
+    // 1) 아직 날아가지 않은 카드는 제자리에 표시 (시작하자마자 전부 사라졌다가 하나씩 나타나는 것 방지)
+    for (const c of this._failAnimCards) {
+      if (c.elapsed < c.delay) this._drawCard(c.card, c.x, c.y);
+    }
+
+    // 2) 날아가는 카드: 대기 중인 카드 위에 그림
+    for (const c of this._failAnimCards) {
+      if (c.elapsed < c.delay || c.alpha <= 0) continue;
 
       ctx.save();
       ctx.globalAlpha = c.alpha;
@@ -870,11 +919,6 @@ export class Renderer {
       }
 
       ctx.restore();
-    }
-
-    const allDone = this._failAnimCards.every(c => c.alpha <= 0);
-    if (allDone) {
-      this._failAnimating = false;
     }
   }
 

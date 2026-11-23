@@ -127,3 +127,43 @@ test('모든 카드가 사라지면 이펙트가 끝난다', () => {
   stepAndCollect(renderer, 0.05);
   assert(!renderer.isFailAnimating);
 });
+
+suite('Renderer - 화면 갱신이 느릴 때의 이펙트 속도');
+
+/** 프레임 간격(ms)을 정해 render() 를 반복 호출하고, 이펙트가 끝날 때까지 걸린 프레임 수를 돌려준다 */
+function framesUntilFailDone(frameMs, maxFrames) {
+  const { game, renderer } = boardWithFreeAndFoundation();
+  renderer.ctx = fakeCtx();
+  renderer._drawCard = () => {};
+  game.giveUp();
+  const realNow = performance.now;
+  let t = 1000;
+  performance.now = () => t;
+  try {
+    renderer.startFailEffect(game);
+    for (let n = 1; n <= maxFrames; n++) {
+      t += frameMs;
+      renderer.render(game, { isDragging: false, cards: [] }, 0);
+      if (!renderer.isFailAnimating) return n;
+    }
+    return Infinity;
+  } finally {
+    performance.now = realNow;
+  }
+}
+
+test('초당 2프레임이어도 패배 이펙트는 실제 시간으로 몇 초 안에 끝난다 (슬로모션 아님)', () => {
+  // 이펙트 길이는 최대 약 3.6초(대기 1.5초 + 사라지는 데 2.1초) → 0.5초 간격이면 10프레임 안팎
+  const n = framesUntilFailDone(500, 200);
+  assert(n <= 12, `12프레임(6초) 안에 끝나야 함, 실제 ${n}프레임`);
+});
+
+test('초당 60프레임일 때의 길이는 그대로 (2~4초)', () => {
+  const n = framesUntilFailDone(1000 / 60, 600);
+  assert(n >= 120 && n <= 240, `실제 ${n}프레임`);
+});
+
+test('한 프레임에 아주 긴 시간이 지나도(탭 복귀 등) 한 번에 최대 1초만 진행', () => {
+  const n = framesUntilFailDone(60000, 200);
+  assert(n >= 3 && n <= 6, `실제 ${n}프레임`);
+});
