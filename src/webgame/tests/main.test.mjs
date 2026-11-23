@@ -77,10 +77,23 @@ globalThis.HTMLTextAreaElement = class {};
 globalThis.ResizeObserver = class { observe() {} };
 globalThis.Image = class { set src(_v) { queueMicrotask(() => this.onerror?.()); } };
 globalThis.localStorage = { getItem: () => null, setItem: noop };
-// IndexedDB 는 열기에 실패한 것으로 처리 → 저장 기능만 꺼진 채로 게임은 동작
-globalThis.indexedDB = {
-  open() { const r = { error: null }; queueMicrotask(() => r.onerror?.()); return r; },
+// 최소 기능 가짜 IndexedDB: 저장된 값은 saved 에서 바로 볼 수 있다
+const saved = new Map();
+const idbRequest = (run) => {
+  const r = { result: undefined, error: null };
+  queueMicrotask(() => { r.result = run(); r.onsuccess?.({ target: r }); });
+  return r;
 };
+const idbStore = {
+  put:    (v, k) => idbRequest(() => { saved.set(k, v); return k; }),
+  get:    (k)    => idbRequest(() => saved.get(k)),
+  delete: (k)    => idbRequest(() => { saved.delete(k); }),
+};
+const idb = {
+  objectStoreNames: { contains: () => true },
+  transaction: () => ({ objectStore: () => idbStore }),
+};
+globalThis.indexedDB = { open: () => idbRequest(() => idb) };
 globalThis.document = {
   getElementById: el, querySelectorAll: () => [], addEventListener: noop, visibilityState: 'visible',
 };
@@ -89,7 +102,7 @@ globalThis.window = {
   devicePixelRatio: 1, addEventListener: (type, fn) => { (winL[type] ??= []).push(fn); },
   setTimeout: globalThis.setTimeout, setInterval: globalThis.setInterval,
 };
-console.warn = noop; // AudioContext / IndexedDB 없음 경고
+console.warn = noop; // AudioContext 없음 경고
 
 const tick = () => new Promise(r => setImmediate(r));
 await import('../dist/main.js');
@@ -193,4 +206,40 @@ test('되돌리기를 하면 진행 중인 드래그가 취소됨 (보이던 카
 
   el('btn-undo').click();
   assert(!canvas.classList.contains('dragging'), '드래그 취소');
+});
+
+suite('자동저장에 기록되는 경과 시간');
+
+const near = (a, b) => Math.abs(a - b) < 1e-6;
+
+test('이동 후 자동저장은 저장 시점까지 흐른 시간을 기록 (1초 단위로 잘리지 않음)', async () => {
+  newGame(1);
+  advance(1900);
+  key('Digit1'); key('KeyU'); // 이동 → 0.8초 뒤 자동저장
+  advance(800);
+  await tick();
+  const snap = saved.get('autosave');
+  assert(snap, '저장됨');
+  assert(near(snap.elapsed, 2.7), `기대 2.7초, 실제 ${snap.elapsed}`);
+});
+
+test('페이지를 닫을 때의 저장도 그 시점까지 흐른 시간을 기록', async () => {
+  newGame(1);
+  advance(1900);
+  for (const fn of winL.pagehide ?? []) fn({});
+  await tick();
+  const snap = saved.get('autosave');
+  assert(snap, '저장됨');
+  assert(near(snap.elapsed, 1.9), `기대 1.9초, 실제 ${snap.elapsed}`);
+});
+
+test('일시정지 중 페이지를 닫아도 멈춘 동안의 시간은 더해지지 않음', async () => {
+  newGame(1);
+  advance(1500);
+  el('btn-pause').click();
+  advance(60000);
+  for (const fn of winL.pagehide ?? []) fn({});
+  await tick();
+  assert(near(saved.get('autosave').elapsed, 1.5), `실제 ${saved.get('autosave').elapsed}`);
+  el('btn-pause').click();
 });

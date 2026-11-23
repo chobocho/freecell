@@ -257,6 +257,7 @@ class GameController {
     const saveNow = () => {
       if (this.game.state === 'play' || this.game.state === 'pause') {
         // pagehide/visibilitychange 에서는 async 불가 → 동기-유사 방식
+        this._syncElapsed();
         const snap = this.game.serialize(this.elapsed);
         this.storage.save(snap); // Promise 반환하지만 awaiting은 안함 (허용됨)
       }
@@ -326,6 +327,7 @@ class GameController {
     if (this._saveTimer) clearTimeout(this._saveTimer);
     this._saveTimer = window.setTimeout(async () => {
       if (this.game.state === 'play' || this.game.state === 'pause') {
+        this._syncElapsed();
         const snap = this.game.serialize(this.elapsed);
         await this.storage.save(snap);
         this._showSaveToast();
@@ -901,10 +903,18 @@ class GameController {
     }, 1000);
   }
 
+  /**
+   * 타이머가 도는 중이면 elapsed 를 지금 시각 기준으로 맞춘다.
+   * (화면은 1초마다만 갱신되므로, 저장하거나 멈추기 직전에 불러 1초 미만의 오차를 없앤다)
+   */
+  private _syncElapsed(): void {
+    if (this.timerInterval) this.elapsed = (Date.now() - this.startTime) / 1000;
+  }
+
   private _stopTimer(): void {
     if (this.timerInterval) {
       // 마지막 1초 갱신 이후 흐른 시간까지 반영 (안 하면 멈출 때마다 1초 미만이 버려진다)
-      this.elapsed = (Date.now() - this.startTime) / 1000;
+      this._syncElapsed();
       clearInterval(this.timerInterval);
       this.timerInterval = 0;
     }
