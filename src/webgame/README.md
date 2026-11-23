@@ -128,7 +128,7 @@ webgame/
 ├── index.html
 ├── build.sh / build.bat  # 릴리스 빌드 (tsc → esbuild → bundle.js)
 ├── bundle.js         # JS·CSS·이미지를 release/index.html 하나로 조립
-├── tests/            # Node.js 유닛 테스트 (229개, node --test)
+├── tests/            # Node.js 유닛 테스트 (232개, node --test)
 │   ├── helpers.mjs         # 공용 도우미 (suite/test/assert, 가짜 입력 환경)
 │   ├── deck.test.mjs       # 카드, 덱
 │   ├── game.test.mjs       # 게임 규칙 (이동, 되돌리기, 승리, 자동 이동)

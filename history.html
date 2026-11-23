@@ -192,5 +192,16 @@
   <p>검증: <code>node --test</code> 229/229 통과, <code>build.sh</code> 빌드 성공. 브라우저에서 직접 확인하지는 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 자동저장에 기록되는 경과 시간 수정</h2>
+  <p class="date">2026-11-24</p>
+  <ul>
+    <li><code>src/webgame/src/main.ts</code>: 이동 후 자동저장과 페이지 닫힘 저장이 저장 시점까지 흐른 시간을 기록합니다.
+        전에는 최대 1초 늦은 값이 저장됐습니다.</li>
+    <li>테스트 3개 추가.</li>
+  </ul>
+  <p>검증: <code>node --test</code> 232/232 통과, <code>build.sh</code> 빌드 성공. 브라우저에서 직접 확인하지는 않았습니다.</p>
+</div>
+
 </body>
 </html>
