@@ -21,9 +21,15 @@ echo " FreeCell Web - Single-File Release Build"
 echo "========================================="
 echo
 
-# Step 1: TypeScript compile (type-check + emit dist/*.js)
+# Step 1: TypeScript compile (type-check + emit dist/*.js).
+# Use an installed compiler when available; otherwise download the JS-based
+# TypeScript 5 compiler via npx (also works on Termux/Android).
 echo "[1/4] Compiling TypeScript..."
-tsc
+if command -v tsc >/dev/null 2>&1; then
+  tsc
+else
+  npx --yes --package typescript@5.9.3 tsc
+fi
 echo "       Done."
 
 # Step 2: Bundle all modules into one IIFE.
