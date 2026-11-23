@@ -4,6 +4,8 @@
  * DB: "freecell-db" / ObjectStore: "saves" / key: "autosave"
  */
 
+import { isValidLfsrState } from './lfsr.js';
+
 // ─── 저장 데이터 스키마 ────────────────────────────────────────────────────
 
 export interface SavedCard {
@@ -42,6 +44,8 @@ const DB_NAME    = 'freecell-db';
 const DB_VERSION = 1;
 const STORE_NAME = 'saves';
 const SAVE_KEY   = 'autosave';
+/** 랜덤 새 게임용 LFSR 상태 (같은 저장소, 키만 다름 → DB 버전/마이그레이션 불필요) */
+const LFSR_KEY   = 'lfsr';
 const SCHEMA_VER = 1;
 
 // ─── GameStorage ───────────────────────────────────────────────────────────
@@ -114,6 +118,31 @@ export class GameStorage {
       const req = st.delete(SAVE_KEY);
       req.onsuccess = () => resolve();
       req.onerror   = () => resolve();
+    });
+  }
+
+  /** 랜덤 새 게임용 LFSR 상태 저장 (새 게임을 시작해도 지워지지 않음) */
+  async saveLfsrState(state: number): Promise<void> {
+    if (!this.db) return;
+    return new Promise((resolve) => {
+      const tx  = this.db!.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).put(state, LFSR_KEY);
+      req.onsuccess = () => resolve();
+      req.onerror   = () => resolve();
+    });
+  }
+
+  /** 저장된 LFSR 상태 불러오기 (없거나 손상되었으면 null) */
+  async loadLfsrState(): Promise<number | null> {
+    if (!this.db) return null;
+    return new Promise((resolve) => {
+      const tx  = this.db!.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(LFSR_KEY);
+      req.onsuccess = () => {
+        const v = req.result as unknown;
+        resolve(isValidLfsrState(v) ? v : null);
+      };
+      req.onerror = () => resolve(null);
     });
   }
 }

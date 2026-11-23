@@ -45,5 +45,21 @@
      실제 기기(한글 IME, 터치스크린)에서의 동작은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 랜덤 새 게임의 게임 번호 순환 (LFSR, solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/src/lfsr.ts</code>(신규): 15비트 최대주기 LFSR(주기 32767)로 게임 번호 1~32000을
+        한 바퀴 동안 중복 없이 고릅니다. 풀 수 없는 #11982는 제외합니다.</li>
+    <li><code>src/webgame/src/main.ts</code>: 게임 번호를 비워두고 시작하면 번호 없는 무작위 셔플 대신
+        LFSR로 고른 번호로 시작합니다. 랜덤 게임에도 <code>#번호</code>가 표시됩니다.</li>
+    <li><code>src/webgame/src/storage.ts</code>: LFSR 상태 숫자 1개를 IndexedDB에 저장/불러오기
+        (<code>saves</code> 저장소, 키 <code>lfsr</code>, DB 버전 변경 없음).</li>
+    <li><code>src/webgame/test.mjs</code>: 테스트 15개 추가 (LFSR 10, 저장소 5).</li>
+  </ul>
+  <p>검증: <code>tsc</code> 통과, <code>node test.mjs</code> 134/134 통과, <code>build.sh</code> 릴리스 빌드 성공.
+     실제 브라우저에서의 동작은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>

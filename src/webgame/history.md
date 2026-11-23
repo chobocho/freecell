@@ -295,3 +295,28 @@ node test.mjs  # 유닛 테스트 실행
 - 가짜 window/canvas로 실제 `InputHandler` + `Renderer`를 구동하는 입력 테스트 추가
 - 키보드 11개 + 터치 8개 추가 → **합계 119개 전체 통과** (`tsc && node test.mjs`)
 - 미확인: 실제 기기(한글 IME 키보드, 터치스크린)에서의 동작
+
+### 랜덤 새 게임의 게임 번호 순환 — LFSR (solitaire_web 참고)
+
+**src/lfsr.ts** (신규)
+- 15비트 최대주기 LFSR(x^15 + x^14 + 1, 주기 32767). solitaire_web은 11비트(주기 2047)라 1~32000에 맞게 확장
+- `nextGameNumber(state, exclude)`: 32000 초과 상태와 제외 번호는 건너뛰어(cycle walking) 한 바퀴 동안 중복 없이 번호 선택
+- 번호 1개당 LFSR을 15칸 전진: 1칸씩이면 연속 번호가 2배 관계(#100 → #200 → #401)로 보이기 때문. 15와 32767은 서로소라 전체 주기 유지
+- `randomLfsrState()`, `isValidLfsrState()` 제공
+
+**src/storage.ts** (수정)
+- `saveLfsrState()` / `loadLfsrState()` 추가: 같은 `saves` 저장소에 키 `lfsr`로 숫자 1개 저장 (DB 버전/마이그레이션 없음)
+- 새 게임 시 `clear()`는 자동저장만 지우므로 LFSR 상태는 유지됨
+
+**src/main.ts** (수정)
+- 게임 번호를 비워두고 시작하면 `Math.random` 셔플(번호 없음) 대신 LFSR로 고른 1~32000 번호로 시작
+  - 랜덤 게임도 헤더에 `#번호`가 표시되어 같은 판을 번호로 다시 할 수 있음
+  - 풀 수 없는 #11982는 제외. 저장값이 없으면 랜덤 위치에서 시작
+- 시작할 때마다 전진하므로 포기한 판도 한 바퀴 동안은 다시 나오지 않음
+
+**bundle.js / index.html / README.md** (수정): 번들 모듈 순서에 `lfsr` 추가, 안내 문구 갱신
+
+**test.mjs** (수정)
+- LFSR 10개(전체 주기, 한 바퀴 32000판 중복 없음·전부 등장, 제외 번호 등) + 가짜 IndexedDB로 저장소 5개 추가
+- **합계 134개 전체 통과**, `build.sh` 릴리스 빌드 성공
+- 미확인: 실제 브라우저에서의 동작(IndexedDB 저장 후 새로고침 시 이어지는지)

@@ -4,9 +4,12 @@ import { InputHandler } from './input.js';
 import { SoundManager } from './sound.js';
 import { GameStorage, formatSavedAt } from './storage.js';
 import { DeckIndex } from './deck.js';
+import { nextGameNumber, randomLfsrState } from './lfsr.js';
 // ─── 게임 컨트롤러 ────────────────────────────────────────────────────────
 class GameController {
     constructor() {
+        /** 랜덤 새 게임용 LFSR 상태 (null = 저장값 없음 → 첫 사용 시 랜덤 위치에서 시작) */
+        this._lfsrState = null;
         /** 자동 완료 진행 중 여부 (입력/재진입 차단용) */
         this._autoCompleting = false;
         this._autoCompleteTimer = 0;
@@ -46,6 +49,7 @@ class GameController {
     async start() {
         await this.renderer.init();
         await this.storage.init();
+        this._lfsrState = await this.storage.loadLfsrState();
         this._bindButtons();
         this._bindResize();
         this._bindPageHide();
@@ -282,11 +286,11 @@ class GameController {
     /** 게임 번호 다이얼로그에서 시작 */
     _onGameNumberStart() {
         const raw = this.elGameNumberInput.value.trim();
-        // 비워두면 랜덤 게임
+        // 비워두면 랜덤 번호 — LFSR 순서로 골라 한 바퀴(1~32000) 동안 같은 판이 다시 나오지 않는다
         if (raw === '') {
             this._clearGameNumberError();
             this.gameNumberOverlay.classList.add('hidden');
-            this._newGame(undefined);
+            this._newGame(this._nextRandomGameNumber());
             return;
         }
         const parsed = parseInt(raw, 10);
@@ -303,6 +307,13 @@ class GameController {
         this._clearGameNumberError();
         this.gameNumberOverlay.classList.add('hidden');
         this._newGame(parsed);
+    }
+    /** LFSR을 전진시켜 다음 랜덤 게임 번호를 고르고 새 상태를 저장한다 (풀 수 없는 판은 제외) */
+    _nextRandomGameNumber() {
+        const r = nextGameNumber(this._lfsrState ?? randomLfsrState(), GameController.UNSOLVABLE_GAMES);
+        this._lfsrState = r.state;
+        this.storage.saveLfsrState(r.state);
+        return r.gameNumber;
     }
     _showGameNumberError(msg) {
         const el = document.getElementById('game-number-error');
