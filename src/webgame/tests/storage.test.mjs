@@ -86,3 +86,59 @@ await testAsync('IndexedDB 를 쓸 수 없어도(init 전) 오류 없이 null/�
   await st.saveLfsrState(5);
   assertEqual(await st.loadLfsrState(), null);
 });
+
+suite('GameStorage - 저장소 오류 (연결이 닫힌 뒤 등)');
+
+/** transaction() 이 예외를 던지는 가짜 IndexedDB (연결이 닫힌 상태) */
+function installClosedIndexedDB() {
+  const db = {
+    objectStoreNames: { contains: () => true },
+    transaction: () => { throw new Error('InvalidStateError: 연결이 닫힘'); },
+  };
+  globalThis.indexedDB = {
+    open: () => {
+      const req = { result: db, error: null };
+      queueMicrotask(() => req.onsuccess?.({ target: req }));
+      return req;
+    },
+  };
+}
+
+await testAsync('transaction() 이 예외를 던져도 저장/삭제는 거부되지 않고 끝남', async () => {
+  installClosedIndexedDB();
+  const st = new GameStorage();
+  await st.init();
+  const g = new FreecellGame(); g.deal(1);
+  await st.save(g.serialize(0));
+  await st.clear();
+  await st.saveLfsrState(7);
+});
+
+await testAsync('transaction() 이 예외를 던지면 불러오기는 null', async () => {
+  installClosedIndexedDB();
+  const st = new GameStorage();
+  await st.init();
+  assertEqual(await st.load(), null);
+  assertEqual(await st.loadLfsrState(), null);
+});
+
+await testAsync('요청은 성공했지만 트랜잭션이 중단되면(용량 초과 등) 기다리던 쪽이 멈추지 않음', async () => {
+  // 요청 콜백은 부르지 않고 트랜잭션 중단만 알리는 가짜 저장소
+  const tx = { objectStore: () => ({ put: () => ({}), delete: () => ({}), get: () => ({}) }) };
+  const db = {
+    objectStoreNames: { contains: () => true },
+    transaction: () => { queueMicrotask(() => tx.onabort?.()); return tx; },
+  };
+  globalThis.indexedDB = {
+    open: () => {
+      const req = { result: db, error: null };
+      queueMicrotask(() => req.onsuccess?.({ target: req }));
+      return req;
+    },
+  };
+  const st = new GameStorage();
+  await st.init();
+  const g = new FreecellGame(); g.deal(1);
+  await st.save(g.serialize(0));
+  assertEqual(await st.load(), null);
+});

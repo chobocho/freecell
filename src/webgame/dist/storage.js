@@ -38,76 +38,54 @@ export class GameStorage {
             };
         });
     }
-    /** 게임 상태 저장 */
-    async save(snapshot) {
-        if (!this.db)
-            return;
+    /**
+     * 저장소에 요청 하나를 보내고 결과를 기다린다.
+     * 어떤 실패(연결이 닫혀 transaction() 이 예외를 던짐, 요청 오류, 용량 초과로 트랜잭션 중단)에도
+     * 거부하지 않고 fallback 으로 끝난다 — 저장이 안 되어도 게임은 계속 동작해야 한다.
+     */
+    _request(mode, run, fallback, map = () => fallback) {
+        const db = this.db;
+        if (!db)
+            return Promise.resolve(fallback);
         return new Promise((resolve) => {
-            const tx = this.db.transaction(STORE_NAME, 'readwrite');
-            const st = tx.objectStore(STORE_NAME);
-            const req = st.put(snapshot, SAVE_KEY);
-            req.onsuccess = () => resolve();
-            req.onerror = () => resolve(); // 저장 실패 시 무시
+            try {
+                const tx = db.transaction(STORE_NAME, mode);
+                const req = run(tx.objectStore(STORE_NAME));
+                req.onsuccess = () => resolve(map(req.result));
+                req.onerror = () => resolve(fallback);
+                tx.onabort = () => resolve(fallback);
+            }
+            catch (e) {
+                console.warn('IndexedDB 요청 실패:', e);
+                resolve(fallback);
+            }
         });
     }
+    /** 게임 상태 저장 */
+    save(snapshot) {
+        return this._request('readwrite', st => st.put(snapshot, SAVE_KEY), undefined);
+    }
     /** 저장된 게임 상태 불러오기 (없으면 null) */
-    async load() {
-        if (!this.db)
-            return null;
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(STORE_NAME, 'readonly');
-            const st = tx.objectStore(STORE_NAME);
-            const req = st.get(SAVE_KEY);
-            req.onsuccess = () => {
-                const data = req.result;
-                if (!data || data.version !== SCHEMA_VER) {
-                    resolve(null);
-                    return;
-                }
-                resolve(data);
-            };
-            req.onerror = () => resolve(null);
+    load() {
+        return this._request('readonly', st => st.get(SAVE_KEY), null, (v) => {
+            const data = v;
+            return data && data.version === SCHEMA_VER ? data : null;
         });
     }
     /** 저장 데이터 삭제 (새 게임 시작 시) */
-    async clear() {
-        if (!this.db)
-            return;
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(STORE_NAME, 'readwrite');
-            const st = tx.objectStore(STORE_NAME);
-            const req = st.delete(SAVE_KEY);
-            req.onsuccess = () => resolve();
-            req.onerror = () => resolve();
-        });
+    clear() {
+        return this._request('readwrite', st => st.delete(SAVE_KEY), undefined);
     }
     /**
      * 새 게임용 LFSR 상태 저장 (새 게임을 시작해도 지워지지 않음)
      * @param level 난이도 이름. 생략하면 난이도 없는 랜덤용 (키 "lfsr"), 주면 "lfsr:난이도"
      */
-    async saveLfsrState(state, level) {
-        if (!this.db)
-            return;
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(STORE_NAME, 'readwrite');
-            const req = tx.objectStore(STORE_NAME).put(state, lfsrKey(level));
-            req.onsuccess = () => resolve();
-            req.onerror = () => resolve();
-        });
+    saveLfsrState(state, level) {
+        return this._request('readwrite', st => st.put(state, lfsrKey(level)), undefined);
     }
     /** 저장된 LFSR 상태 불러오기 (없거나 손상되었으면 null) */
-    async loadLfsrState(level) {
-        if (!this.db)
-            return null;
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(STORE_NAME, 'readonly');
-            const req = tx.objectStore(STORE_NAME).get(lfsrKey(level));
-            req.onsuccess = () => {
-                const v = req.result;
-                resolve(isValidLfsrState(v) ? v : null);
-            };
-            req.onerror = () => resolve(null);
-        });
+    loadLfsrState(level) {
+        return this._request('readonly', st => st.get(lfsrKey(level)), null, (v) => (isValidLfsrState(v) ? v : null));
     }
 }
 /** 스냅샷의 저장 시각을 사람이 읽기 쉬운 문자열로 변환 */
