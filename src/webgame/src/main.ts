@@ -700,6 +700,8 @@ class GameController {
     if (this.game.state !== 'play') return;
     if (!this.game.canUndo) return;
     this.game.undo();
+    // 드래그 중이던 카드는 되돌리기 전 보드 기준이라, 그대로 놓으면 보이던 것과 다른 카드가 옮겨질 수 있다
+    this.input.clearSelection();
     this.sound.play('card_flip');
     this._updateUI();
     this._scheduleSave();
@@ -901,6 +903,8 @@ class GameController {
 
   private _stopTimer(): void {
     if (this.timerInterval) {
+      // 마지막 1초 갱신 이후 흐른 시간까지 반영 (안 하면 멈출 때마다 1초 미만이 버려진다)
+      this.elapsed = (Date.now() - this.startTime) / 1000;
       clearInterval(this.timerInterval);
       this.timerInterval = 0;
     }
