@@ -11,6 +11,7 @@ import { FreecellGame } from './dist/freecell.js';
 import { InputHandler } from './dist/input.js';
 import { Renderer, loadImages } from './dist/renderer.js';
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 import {
   LFSR_PERIOD, MAX_GAME_NUMBER,
   lfsrStep, randomLfsrState, isValidLfsrState, nextGameNumber,
@@ -1908,6 +1909,29 @@ test('assemble: 번들에 import/export 구문이 남아 있으면 오류 (IIFE 
   try { assemble({ html: SHELL, css: '', bundle: 'import { a } from "./a.js";\na();', images: {} }); }
   catch (e) { err = e; }
   assert(err !== null);
+});
+
+test('assemble: icon 을 주면 파비콘을 data URI 로 내장한다', () => {
+  const out = assemble({
+    html: SHELL, css: '', bundle: 'x()', images: {}, icon: 'data:image/png;base64,ICON',
+  });
+  assert(out.includes('<link rel="icon" href="data:image/png;base64,ICON">'), '파비콘 내장');
+  assert(!out.includes('img/icon.png'), '외부 파일 참조 없음');
+  assertEqual((out.match(/<link\b/g) || []).length, 1, 'link 는 파비콘 하나뿐');
+});
+
+test('assemble: icon 이 없으면 파비콘 태그를 지운다 (깨진 참조를 남기지 않음)', () => {
+  const out = assemble({ html: SHELL, css: '', bundle: 'x()', images: {} });
+  assert(!/<link\b/.test(out));
+});
+
+test('img/icon.png: index.html 이 가리키는 파비콘 파일이 있고 정사각형 PNG 이다', () => {
+  const buf = readFileSync(new URL('./img/icon.png', import.meta.url));
+  assertEqual(buf.subarray(1, 4).toString('latin1'), 'PNG');
+  const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
+  assertEqual(w, h, '정사각형');
+  assert(w >= 64, `너무 작음: ${w}`);
+  assert(buf.length < 20000, `너무 큼: ${buf.length} bytes`);
 });
 
 // ─── 결과 ───────────────────────────────────────────────────────────────────

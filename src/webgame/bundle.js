@@ -7,6 +7,7 @@
  *   - JS   -> one IIFE bundle produced by esbuild from dist/main.js
  *   - IMG  -> every img/*.png embedded as a base64 data URI (window.__IMG__,
  *             read by loadImages() in src/renderer.ts)
+ *   - ICON -> img/icon.png embedded as the favicon's data URI
  *   (sounds are generated at runtime via Web Audio API, no files needed)
  *
  * Usage (called by build.sh / build.bat after `tsc` and esbuild):
@@ -39,10 +40,11 @@ function replaceOnce(text, pattern, replacement, what) {
  *   html   — index.html source
  *   css    — stylesheet text
  *   bundle — IIFE JavaScript (no import/export)
- *   images — image name -> data URI
+ *   images — image name -> data URI (card images used by the game)
+ *   icon   — optional favicon data URI; when omitted the favicon tag is removed
  * @returns {string}
  */
-function assemble({ html, css, bundle, images }) {
+function assemble({ html, css, bundle, images, icon }) {
   if (/<\/script/i.test(bundle)) {
     throw new Error('bundle contains "</script", which would end the inline script early');
   }
@@ -57,9 +59,11 @@ function assemble({ html, css, bundle, images }) {
   out = replaceOnce(
     out, /[ \t]*<link rel="stylesheet"[^>]*>[ \t]*\r?\n?/,
     `  <style>\n${css}\n  </style>\n`, 'stylesheet <link>');
-  // Favicon points at img/icon.png which is not part of the asset set — drop it
-  // so the standalone file has zero external references. (Optional tag.)
-  out = out.replace(/[ \t]*<link rel="icon"[^>]*>[ \t]*\r?\n?/, '');
+  // Favicon: embed it, or drop the tag when there is no icon, so the standalone
+  // file never points at an external img/icon.png. (The tag itself is optional.)
+  out = out.replace(
+    /[ \t]*<link rel="icon"[^>]*>[ \t]*\r?\n?/,
+    () => (icon ? `  <link rel="icon" href="${icon}">\n` : ''));
   out = replaceOnce(
     out, /[ \t]*<script type="module" src="dist\/main\.js"><\/script>/,
     `  <script>window.__IMG__ = ${imgJson};</script>\n  <script>\n${bundle}\n  </script>`,
@@ -90,12 +94,15 @@ function main() {
   // Catch a truncated or broken bundle before it is shipped.
   new Function(bundle); // eslint-disable-line no-new-func
 
-  const images = readImages('img');
+  // icon.png is the favicon, not a card image — keep it out of the game's image map.
+  const { icon, ...images } = readImages('img');
+  if (!icon) console.warn('       WARNING: img/icon.png not found — release has no favicon.');
   const html = assemble({
     html: fs.readFileSync('index.html', 'utf8'),
     css: fs.readFileSync('css/style.css', 'utf8'),
     bundle,
     images,
+    icon,
   });
 
   fs.mkdirSync('release', { recursive: true });
@@ -103,7 +110,7 @@ function main() {
   fs.writeFileSync(outPath, html);
 
   const kb = (fs.statSync(outPath).size / 1024).toFixed(1);
-  console.log(`       index.html: ${kb} KB (${Object.keys(images).length} images embedded)`);
+  console.log(`       index.html: ${kb} KB (${Object.keys(images).length} images${icon ? ' + favicon' : ''} embedded)`);
 }
 
 module.exports = { assemble };

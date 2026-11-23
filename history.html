@@ -125,5 +125,19 @@
      좁은 화면과 터치 입력은 확인하지 않았습니다.</p>
 </div>
 
+<div class="entry">
+  <h2>웹게임: 파비콘 추가 및 릴리스에 내장 (solitaire_web 참고)</h2>
+  <p class="date">2026-11-23</p>
+  <ul>
+    <li><code>src/webgame/img/icon.png</code>(신규): 초록 바탕의 금색 스페이드 아이콘(192×192, 약 2KB).
+        <code>index.html</code>이 가리키던 파일이 없던 문제를 해결했습니다.</li>
+    <li><code>src/webgame/scripts/gen-icon.mjs</code>(신규): 아이콘을 다시 만드는 스크립트.</li>
+    <li><code>src/webgame/bundle.js</code>: 릴리스 빌드에서 파비콘을 지우는 대신 data URI로 넣습니다.</li>
+    <li><code>src/webgame/test.mjs</code>: 테스트 3개 추가.</li>
+  </ul>
+  <p>검증: <code>node test.mjs</code> 190/190 통과, <code>build.sh</code> 빌드 성공, Chrome에서 파비콘이 이미지로 읽히는 것 확인.
+     탭에 표시된 실제 모양은 확인하지 않았습니다.</p>
+</div>
+
 </body>
 </html>

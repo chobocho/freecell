@@ -36,7 +36,7 @@ tsc --watch
 bash build.sh      # Windows: build.bat
 ```
 
-`release/index.html` 하나에 JS·CSS·카드 이미지를 모두 넣습니다. 이 파일만 있으면 브라우저에서 바로 열립니다.
+`release/index.html` 하나에 JS·CSS·카드 이미지·파비콘을 모두 넣습니다. 이 파일만 있으면 브라우저에서 바로 열립니다.
 
 - JS는 [esbuild](https://esbuild.github.io/)가 `dist/main.js`에서 import를 따라가 하나의 IIFE로 묶습니다. `src/`에 모듈을 추가해도 빌드 스크립트를 고칠 필요가 없습니다.
 - esbuild는 기본적으로 `npx`로 실행하며, 처음 한 번은 인터넷에서 내려받습니다(이후 캐시 사용).
@@ -112,14 +112,15 @@ webgame/
 │   ├── storage.ts    # IndexedDB 자동저장
 │   └── main.ts       # GameController (통합)
 ├── scripts/
-│   └── gen-levels.mjs  # 난이도 표 생성 (tsc && node scripts/gen-levels.mjs)
+│   ├── gen-levels.mjs  # 난이도 표 생성 (tsc && node scripts/gen-levels.mjs)
+│   └── gen-icon.mjs    # 파비콘 img/icon.png 생성 (node scripts/gen-icon.mjs)
 ├── dist/             # 컴파일된 JS (tsc 출력)
 ├── css/style.css
-├── img/              # 카드 이미지 (52장 + 뒷면)
+├── img/              # 카드 이미지 (52장 + 뒷면), 파비콘 icon.png
 ├── index.html
 ├── build.sh / build.bat  # 릴리스 빌드 (tsc → esbuild → bundle.js)
 ├── bundle.js         # JS·CSS·이미지를 release/index.html 하나로 조립
-├── test.mjs          # Node.js 유닛 테스트 (187개)
+├── test.mjs          # Node.js 유닛 테스트 (190개)
 ├── tsconfig.json
 ├── history.md        # 개발 이력
 └── Todo.md           # 요구사항 정의
